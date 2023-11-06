@@ -7,7 +7,7 @@ from utils.file_manager import FileManager
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    filenames, train_set, test_set, ground_truths = FileManager.prepare_data(base_path='data/ears/')
-    detections = detect_ears(image_paths=train_set)
+    filenames, train_set, test_set, ground_truths = FileManager.prepare_data(base_path='data/')
+    detections = detect_ears(image_paths=train_set, base_path='data/')
 
 

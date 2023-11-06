@@ -15,20 +15,36 @@ def detect_ear(ear_detector: cv2.CascadeClassifier, img_path: str) -> (int, int,
                                 )
                )
     for (x, y, w, h) in results:
-        print('Ear detected at: ', x, y, w, h)
+        print(f'Ear detected at x: '+str(x)+', y: '+str(y)+', width: +'+str(w)+', height: '+str(h))
         # Draw rectangles after passing the coordinates.
-        # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    # cv2.imshow('img', img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+        x, y, w, h = normalize_result(x=x, y=y, width=w, height=h, img_width=img.shape[1], img_height=img.shape[0])
+        print(f'Normalized coordinates x: ' + str(x) + ', y: ' + str(y) + ', width: ' + str(w) + ', height: ' + str(h))
+
+    cv2.imshow('img', img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     return results
 
 
-def detect_ears(image_paths: [str]) -> dict[(int, int, int, int)]:
-    left_ear_detector = cv2.CascadeClassifier('data/ears/haarcascade_mcs_leftear.xml')
-    right_ear_detector = cv2.CascadeClassifier('data/ears/haarcascade_mcs_rightear.xml')
+def normalize_result(x: float, y: float, width: int, height: int, img_width: int, img_height: int) -> (int, int, int, int):
+    # Calculate the center of the bounding box
+    center_x = x + (width / 2)
+    center_y = y + (height / 2)
+
+    # Calculate the normalized coordinates by dividing the center and dimensions by the image width and height
+    normalized_x = center_x / img_width
+    normalized_y = center_y / img_height
+    normalized_width = width / img_width
+    normalized_height = height / img_height
+
+    return normalized_x, normalized_y, normalized_width, normalized_height
+
+def detect_ears(image_paths: [str], base_path: str) -> dict[(int, int, int, int)]:
+    left_ear_detector = cv2.CascadeClassifier(base_path+'haarcascade_mcs_leftear.xml')
+    right_ear_detector = cv2.CascadeClassifier(base_path+'haarcascade_mcs_rightear.xml')
     detections = {}
 
     for image in image_paths:
@@ -39,5 +55,5 @@ def detect_ears(image_paths: [str]) -> dict[(int, int, int, int)]:
             detections[image] = left_ear_detection
         elif right_ear_detection is not None:
             detections[image] = right_ear_detection
-
+        break
     return detections
