@@ -25,7 +25,8 @@ class FileManager(object):
         """
         grounds_truths = {}
         for filename in filenames:
-            with open(filename+'.txt', "r") as file:
+            full_filename = filename+'.txt'
+            with open(full_filename, "r") as file:
                 # Reading from a file
                 line = file.readline()
                 _, x, y, w, h = line.split()
@@ -41,7 +42,7 @@ class FileManager(object):
         :return: train and test sets with cascade file paths.
         """
         filenames = FileManager.find_cascade_filenames(base_path=base_path)
-        train_set, test_set = FileManager.split_data_set(filenames=filenames, train_ratio=0.8)
+        train_set, test_set = FileManager.split_data_set(filenames=filenames, train_ratio=0.1)
         ground_truths = FileManager.read_ground_truths(filenames=filenames)
 
         return filenames, train_set, test_set, ground_truths
