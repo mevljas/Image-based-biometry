@@ -30,7 +30,7 @@ class FileManager(object):
                 # Reading from a file
                 line = file.readline()
                 _, x, y, w, h = line.split()
-                grounds_truths[filename] = (x, y, w, h)
+                grounds_truths[filename] = (float(x), float(y), float(w), float(h))
         return grounds_truths
 
 

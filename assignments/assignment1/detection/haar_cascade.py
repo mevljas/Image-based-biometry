@@ -1,39 +1,33 @@
-from collections import defaultdict
-from typing import Type, Dict, Any, List
-
 import cv2
 import numpy as np
-from copy import deepcopy
 
 
-def detect_ear(ear_detector: cv2.CascadeClassifier, img_path: str) -> (int, int, int, int):
+def detect_ear(ear_detector: cv2.CascadeClassifier, img_path: str) -> (int, int, int, int, int, int):
+    """
+    Detects ears on the given image. Returns the bounding box coordinates if an ear is detected.
+    :param ear_detector:  cascade classifier for ear detection.
+    :param img_path:  path of the image.
+    :return:  bounding box coordinates if an ear is detected.
+    """
     img = cv2.imread(img_path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # results is a list of bounding box coordinates (x,y,w,h) around the detected object.
+    # results is a list of bounding box coordinates (x,y,width,height) around the detected object.
     results = (ear_detector.
                # This method only works on grayscale pictures.
-               detectMultiScale3(gray,
-                                 scaleFactor=1.1,  # How much the object’s size is reduced to the original image (1-2).
-                                 minNeighbors=2,  # How many neighbors should contribute in a single bounding box.
-                                    outputRejectLevels=True,
-                                 # Minimum possible object size. Objects smaller than this are ignored.
-                                 )
+               detectMultiScale(gray,
+                                scaleFactor=1.1,  # How much the object’s size is reduced to the original image (1-2).
+                                minNeighbors=5,  # How many neighbors should contribute in a single bounding box.
+                                )
                )
-    rects = results[0]
-    neighbours = results[1]
-    weights = results[2]
 
-    for coords, score in zip(rects, weights):
-        (x, y, w, h) = coords
-        print(f'Ear detected at x: ' + str(x) + ', y: ' + str(y) + ', width: ' + str(w) + ', height: ' + str(h))
+    for (x, y, width, height) in results:
+        print(
+            f'Ear detected at x: ' + str(x) + ', y: ' + str(y) + ', width: ' + str(width) + ', height: ' + str(height))
         # Draw rectangles after passing the coordinates.
-        # cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        # cv2.rectangle(img, (x, y), (x + w, y + height), (0, 255, 0), 2)
 
-        x, y, w, h = normalize_result(x=x, y=y, width=w, height=h, img_width=img.shape[1], img_height=img.shape[0])
-        print(f'Normalized coordinates x: ' + str(x) + ', y: ' + str(y) + ', width: ' + str(w) + ', height: ' + str(h))
-        print("\n")
-        return x, y, w, h, score
+        return x, y, width, height, img.shape[1], img.shape[0]
 
     # cv2.imshow('img', img)
     # cv2.waitKey(0)
@@ -42,29 +36,31 @@ def detect_ear(ear_detector: cv2.CascadeClassifier, img_path: str) -> (int, int,
     return None
 
 
-def normalize_result(x: float, y: float, width: int, height: int, img_width: int, img_height: int) -> (
-        int, int, int, int):
-    # Calculate the center of the bounding box
-    center_x = x + (width / 2)
-    center_y = y + (height / 2)
+def convert_center_and_percentage_to_pixel_coordinates(center_percentage_coordinates, width_percentage,
+                                                       height_percentage, image_width, image_height):
+    x_percentage, y_percentage = center_percentage_coordinates
 
-    # Calculate the normalized coordinates by dividing the center and dimensions by the image width and height
-    normalized_x = center_x / img_width
-    normalized_y = center_y / img_height
-    normalized_width = width / img_width
-    normalized_height = height / img_height
+    x_center_pixel = x_percentage * image_width
+    y_center_pixel = y_percentage * image_height
+    width_pixel = width_percentage * image_width
+    height_pixel = height_percentage * image_height
 
-    x_bottomright_gt = normalized_x + normalized_width
-    y_bottomright_gt = normalized_y + normalized_height
+    x_pixel = x_center_pixel - (width_pixel / 2)
+    y_pixel = y_center_pixel - (height_pixel / 2)
 
-    return normalized_x, normalized_y, x_bottomright_gt, y_bottomright_gt
+    return x_pixel, y_pixel, width_pixel, height_pixel
 
 
-def detect_ears(image_paths: [str], base_path: str) -> dict[Any, dict[str, list[Any]] | dict[str, list[Any]]]:
+def detect_ears(image_paths: [str], base_path: str) -> dict[str, list[int]]:
+    """
+    Detects ears on the given images. Returns the bounding box coordinates if an ear is detected.
+    :param image_paths: file paths of the images.
+    :param base_path: base path for cascade files.
+    :return: dictionary of detected bounding boxes per images.
+    """
     left_ear_detector = cv2.CascadeClassifier(base_path + 'haarcascade_mcs_leftear.xml')
     right_ear_detector = cv2.CascadeClassifier(base_path + 'haarcascade_mcs_rightear.xml')
     detections = dict()
-    scores = []
 
     for image in image_paths:
         full_image_path = image + '.png'
@@ -74,226 +70,67 @@ def detect_ears(image_paths: [str], base_path: str) -> dict[Any, dict[str, list[
         right_ear_detection = detect_ear(ear_detector=right_ear_detector, img_path=full_image_path)
 
         if left_ear_detection is not None:
-            x, y, w, h, score = left_ear_detection
-            detections[image] = {'boxes': [x, y, w, h], 'scores': [score]}
+            x, y, w, h, img_width, img_height = left_ear_detection
+            detections[image] = [x, y, w, h, img_width, img_height]
         elif right_ear_detection is not None:
-            x, y, w, h, score = right_ear_detection
-            detections[image] = {'boxes': [x, y, w, h], 'scores': [score]}
+            x, y, w, h, img_width, img_height = right_ear_detection
+            detections[image] = [x, y, w, h, img_width, img_height]
+
+        return detections
 
     return detections
 
 
-def calc_iou(gt_bbox, pred_bbox):
+def calculate_iou(ground_truth_box: [float], predicted_box: [float]) -> float:
     """
-    This function takes the predicted bounding box and ground truth bounding box and
-    return the IoU ratio
+    Calculates the IOU for the given ground truth and predicted bounding boxes.
+    :param ground_truth_box:
+    :param predicted_box:
+    :return:
     """
-    x_topleft_gt, y_topleft_gt, x_bottomright_gt, y_bottomright_gt = gt_bbox
-    x_topleft_p, y_topleft_p, x_bottomright_p, y_bottomright_p = pred_bbox
+    x1, y1, w1, h1 = ground_truth_box
+    x2, y2, w2, h2, _, _ = predicted_box
 
-    if (x_topleft_gt > x_bottomright_gt) or (y_topleft_gt > y_bottomright_gt):
-        raise AssertionError("Ground Truth Bounding Box is not correct")
-    if (x_topleft_p > x_bottomright_p) or (y_topleft_p > y_bottomright_p):
-        raise AssertionError("Predicted Bounding Box is not correct", x_topleft_p, x_bottomright_p, y_topleft_p,
-                             y_bottomright_gt)
+    # Calculate the coordinates of the intersection rectangle
+    x_intersection = max(x1, x2)
+    y_intersection = max(y1, y2)
+    x2_intersection = min(x1 + w1, x2 + w2)
+    y2_intersection = min(y1 + h1, y2 + h2)
 
-    # if the GT bbox and predcited BBox do not overlap then iou=0
-    if (x_bottomright_gt < x_topleft_p):
-        # If bottom right of x-coordinate  GT  bbox is less than or above the top left of x coordinate of  the predicted BBox
+    # Calculate the area of the intersection
+    intersection_area = max(0, x2_intersection - x_intersection) * max(0, y2_intersection - y_intersection)
 
-        return 0.0
-    if (
-            y_bottomright_gt < y_topleft_p):  # If bottom right of y-coordinate  GT  bbox is less than or above the top left of y coordinate of  the predicted BBox
+    # Calculate the area of the union
+    union_area = (w1 * h1) + (w2 * h2) - intersection_area
 
-        return 0.0
-    if (
-            x_topleft_gt > x_bottomright_p):  # If bottom right of x-coordinate  GT  bbox is greater than or below the bottom right  of x coordinate of  the predcited BBox
+    # Calculate the IoU
+    iou = intersection_area / union_area
 
-        return 0.0
-    if (
-            y_topleft_gt > y_bottomright_p):  # If bottom right of y-coordinate  GT  bbox is greater than or below the bottom right  of y coordinate of  the predcited BBox
-
-        return 0.0
-
-    GT_bbox_area = (x_bottomright_gt - x_topleft_gt + 1) * (y_bottomright_gt - y_topleft_gt + 1)
-    Pred_bbox_area = (x_bottomright_p - x_topleft_p + 1) * (y_bottomright_p - y_topleft_p + 1)
-
-    x_top_left = np.max([x_topleft_gt, x_topleft_p])
-    y_top_left = np.max([y_topleft_gt, y_topleft_p])
-    x_bottom_right = np.min([x_bottomright_gt, x_bottomright_p])
-    y_bottom_right = np.min([y_bottomright_gt, y_bottomright_p])
-
-    intersection_area = (x_bottom_right - x_top_left + 1) * (y_bottom_right - y_top_left + 1)
-
-    union_area = (GT_bbox_area + Pred_bbox_area - intersection_area)
-
-    return intersection_area / union_area
+    return iou
 
 
-def get_single_image_results(gt_boxes, pred_boxes, iou_thr):
-    """Calculates number of true_pos, false_pos, false_neg from single batch of boxes.
-    Args:
-        gt_boxes (list of list of floats): list of locations of ground truth
-            objects as [xmin, ymin, xmax, ymax]
-        pred_boxes (dict): dict of dicts of 'boxes' (formatted like `gt_boxes`)
-            and 'scores'
-        iou_thr (float): value of IoU to consider as threshold for a
-            true prediction.
-    Returns:
-        dict: true positives (int), false positives (int), false negatives (int)
+def calculate_iou_sum(gt_boxes: {float}, predicted_boxes: {float}) -> float:
     """
-    all_pred_indices = range(len(pred_boxes))
-    all_gt_indices = range(len(gt_boxes))
-    if len(all_pred_indices) == 0:
-        tp = 0
-        fp = 0
-        fn = 0
-        return {'true_positive': tp, 'false_positive': fp, 'false_negative': fn}
-    if len(all_gt_indices) == 0:
-        tp = 0
-        fp = 0
-        fn = 0
-        return {'true_positive': tp, 'false_positive': fp, 'false_negative': fn}
-
-    gt_idx_thr = []
-    pred_idx_thr = []
-    ious = []
-    for ipb, pred_box in enumerate(pred_boxes):
-        for igb, gt_box in enumerate(gt_boxes):
-            iou = calc_iou(gt_box, pred_box)
-
-            if iou > iou_thr:
-                gt_idx_thr.append(igb)
-                pred_idx_thr.append(ipb)
-                ious.append(iou)
-    iou_sort = np.argsort(ious)[::1]
-    if len(iou_sort) == 0:
-        tp = 0
-        fp = 0
-        fn = 0
-        return {'true_positive': tp, 'false_positive': fp, 'false_negative': fn}
-    else:
-        gt_match_idx = []
-        pred_match_idx = []
-        for idx in iou_sort:
-            gt_idx = gt_idx_thr[idx]
-            pr_idx = pred_idx_thr[idx]
-            # If the boxes are unmatched, add them to matches
-            if (gt_idx not in gt_match_idx) and (pr_idx not in pred_match_idx):
-                gt_match_idx.append(gt_idx)
-                pred_match_idx.append(pr_idx)
-        tp = len(gt_match_idx)
-        fp = len(pred_boxes) - len(pred_match_idx)
-        fn = len(gt_boxes) - len(gt_match_idx)
-    return {'true_positive': tp, 'false_positive': fp, 'false_negative': fn}
-
-
-def calc_precision_recall(image_results):
-    """Calculates precision and recall from the set of images
-    Args:
-        img_results (dict): dictionary formatted like:
-            {
-                'img_id1': {'true_pos': int, 'false_pos': int, 'false_neg': int},
-                'img_id2': ...
-                ...
-            }
-    Returns:
-        tuple: of floats of (precision, recall)
+    Calculates the average IOU for the given ground truth and predicted bounding boxes.
+    :param gt_boxes: ground truth bounding boxes.
+    :param predicted_boxes: predicted bounding boxes.
+    :return: IOU sum.
     """
-    true_positive = 0
-    false_positive = 0
-    false_negative = 0
-    for img_id, res in image_results.items():
-        true_positive += res['true_positive']
-        false_positive += res['false_positive']
-        false_negative += res['false_negative']
-        try:
-            precision = true_positive / (true_positive + false_positive)
-        except ZeroDivisionError:
-            precision = 0.0
-        try:
-            recall = true_positive / (true_positive + false_negative)
-        except ZeroDivisionError:
-            recall = 0.0
-    return (precision, recall)
+    scores = []
 
+    for key in gt_boxes.keys():
+        gt_box = gt_boxes[key]
+        if key not in predicted_boxes.keys():
+            scores.append(0)
+            continue
+        pred_box = predicted_boxes[key]
+        _, _, _, _, img_width, img_height = pred_box
+        x, y, w, h = gt_box
+        converted_gt_box = convert_center_and_percentage_to_pixel_coordinates(center_percentage_coordinates=(x, y),
+                                                                              width_percentage=w,
+                                                                              height_percentage=h,
+                                                                              image_width=img_width,
+                                                                              image_height=img_height)
+        scores.append(calculate_iou(converted_gt_box, pred_box))
 
-def get_avg_precision_at_iou(gt_boxes, pred_bb, iou_thr=0.5):
-    model_scores = get_model_scores(pred_bb)
-    sorted_model_scores = sorted(model_scores.keys())
-    # Sort the predicted boxes in descending order (lowest scoring boxes first):
-    for img_id in pred_bb.keys():
-        arg_sort = np.argsort(pred_bb[img_id]['scores'])
-        pred_bb[img_id]['scores'] = np.array(pred_bb[img_id]['scores'])[arg_sort].tolist()
-        pred_bb[img_id]['boxes'] = np.array(pred_bb[img_id]['boxes'])[arg_sort].tolist()
-
-    pred_boxes_pruned = deepcopy(pred_bb)
-
-    precisions = []
-    recalls = []
-    model_thrs = []
-    img_results = {}
-    # Loop over model score thresholds and calculate precision, recall
-    for ithr, model_score_thr in enumerate(sorted_model_scores[:-1]):
-        # On first iteration, define img_results for the first time:
-        print("Mode score : ", model_score_thr)
-        img_ids = gt_boxes.keys() if ithr == 0 else model_scores[model_score_thr]
-    for img_id in img_ids:
-
-        gt_boxes_img = gt_boxes[img_id]
-        box_scores = pred_boxes_pruned[img_id]['scores']
-        start_idx = 0
-        for score in box_scores:
-            if score <= model_score_thr:
-                pred_boxes_pruned[img_id]
-                start_idx += 1
-            else:
-                break
-                # Remove boxes, scores of lower than threshold scores:
-        pred_boxes_pruned[img_id]['scores'] = pred_boxes_pruned[img_id]['scores'][start_idx:]
-        pred_boxes_pruned[img_id]['boxes'] = pred_boxes_pruned[img_id]['boxes'][start_idx:]
-        # Recalculate image results for this image
-        print(img_id)
-        img_results[img_id] = get_single_image_results(gt_boxes_img, pred_boxes_pruned[img_id]['boxes'], iou_thr=0.5)
-        # calculate precision and recall
-    prec, rec = calc_precision_recall(img_results)
-    precisions.append(prec)
-    recalls.append(rec)
-    model_thrs.append(model_score_thr)
-    precisions = np.array(precisions)
-    recalls = np.array(recalls)
-    prec_at_rec = []
-    for recall_level in np.linspace(0.0, 1.0, 11):
-        try:
-            args = np.argwhere(recalls > recall_level).flatten()
-            prec = max(precisions[args])
-            print(recalls, "Recall")
-            print(recall_level, "Recall Level")
-            print(args, "Args")
-            print(prec, "precision")
-        except ValueError:
-            prec = 0.0
-        prec_at_rec.append(prec)
-    avg_prec = np.mean(prec_at_rec)
-    return {
-        'avg_prec': avg_prec,
-        'precisions': precisions,
-        'recalls': recalls,
-        'model_thrs': model_thrs}
-
-
-def get_model_scores(pred_boxes):
-    """Creates a dictionary of from model_scores to image ids.
-    Args:
-        pred_boxes (dict): dict of dicts of 'boxes' and 'scores'
-    Returns:
-        dict: keys are model_scores and values are image ids (usually filenames)
-    """
-    model_score = {}
-    for img_id, val in pred_boxes.items():
-        for score in val['scores']:
-            if score not in model_score.keys():
-                model_score[score] = [img_id]
-            else:
-                model_score[score].append(img_id)
-    return model_score
+    return sum(scores)
