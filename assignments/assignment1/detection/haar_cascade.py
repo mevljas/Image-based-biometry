@@ -1,7 +1,7 @@
 import logging
+from typing import Any
 
 import cv2
-import numpy as np
 
 
 def detect_ear(ear_detector: cv2.CascadeClassifier, img_path: str) -> (int, int, int, int, int, int):
@@ -11,9 +11,11 @@ def detect_ear(ear_detector: cv2.CascadeClassifier, img_path: str) -> (int, int,
     :param img_path:  path of the image.
     :return:  bounding box coordinates if an ear is detected.
     """
-    logging.debug('Detecting ears on image: ' + img_path)
+    logging.debug('Detecting ears with ear detector: ' + str(ear_detector))
     img = cv2.imread(img_path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    detections = []
 
     # results is a list of bounding box coordinates (x,y,width,height) around the detected object.
     results = ear_detector.detectMultiScale(gray,
@@ -28,58 +30,69 @@ def detect_ear(ear_detector: cv2.CascadeClassifier, img_path: str) -> (int, int,
         logging.info(
             f'Ear detected x: ' + str(x) + ', y: ' + str(y) + ' width: ' + str(width) + ', height: ' + str(height))
         # Draw rectangles after passing the coordinates.
-        # cv2.rectangle(img, (x, y), (x + w, y + height), (0, 255, 0), 2)
+        # cv2.rectangle(img, (x, y), (x + width, y + height), (0, 255, 0), 2)
 
-        return x, y, width, height, img.shape[1], img.shape[0]
+        detections.append((x, y, x + width, y + height, img.shape[1], img.shape[0]))
 
-    logging.debug('No ear detected.')
+    logging.debug('Detected ' + str(len(detections)) + ' ears.')
 
+    # cv2.rectangle(img, (516, 518), (707, 746), (255, 0, 0), 2)
     # cv2.imshow('img', img)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
-    return None
+    return detections[0] if len(detections) > 0 else None
 
 
-def convert_percentage_to_pixel_coordinates(x_percentage: float,
-                                            y_percentage: float,
-                                            width_percentage: float,
-                                            height_percentage: float,
-                                            image_width: int,
-                                            image_height: int) -> (float, float, float, float):
-
-    logging.debug('Converting percentage coordinates to pixel coordinates x: ' + str(x_percentage) +
-                  ', y: ' + str(y_percentage) +
-                  ' width: ' + str(width_percentage) +
-                  ', height: ' + str(height_percentage) +
+def normalise_ground_truth_coordinates(x1: float,
+                                       y1: float,
+                                       x2: float,
+                                       y2: float,
+                                       image_width: int,
+                                       image_height: int) -> (float, float, float, float):
+    """
+    Normalizes the ground truth coordinates. The coordinates are given as percentages of the image size.
+    :param x1: x in percentage of the image width.
+    :param y1: y in percentage of the image height.
+    :param x2: x + width in percentage of the image width.
+    :param y2: y + height in percentage of the image height.
+    :param image_width: Full image width in pixels.
+    :param image_height: Full image height in pixels.
+    :return: Top left and bottom right coordinates of the bounding box.
+    """
+    logging.debug('Normalizing ground truth coordinates x1: ' + str(x1) +
+                  ', y2: ' + str(y1) +
+                  ' x2: ' + str(x2) +
+                  ', y1: ' + str(y2) +
                   ' image_width: ' + str(image_width) +
                   ', image_height: ' + str(image_height) + '.')
 
-    x_center_pixel = x_percentage * image_width
-    y_center_pixel = y_percentage * image_height
+    x_center = float(x1) * image_width
+    y_center = float(y1) * image_height
+    ground_width = float(x2) * (image_width / 2)
+    ground_height = float(y2) * (image_height / 2)
 
-    width_pixel = width_percentage * image_width
-    height_pixel = height_percentage * image_height
+    norm_x1 = int(x_center - ground_width)
+    norm_y1 = int(y_center - ground_height)
+    norm_x2 = int(x_center + ground_width)
+    norm_y2 = int(y_center + ground_height)
 
-    x_pixel = x_center_pixel - (width_pixel / 2)
-    y_pixel = y_center_pixel - (height_pixel / 2)
+    logging.debug('Normalized ground truth coordinates x1: ' + str(norm_x1) +
+                  ', y1: ' + str(norm_y1) +
+                  ' x2: ' + str(norm_x2) +
+                  ', y2: ' + str(norm_y2) + '.')
 
-    logging.debug('Converted percentage coordinates to pixel coordinates x: ' + str(x_pixel) +
-                  ', y: ' + str(y_pixel) +
-                  ' width: ' + str(width_pixel) +
-                  ', height: ' + str(height_pixel) + '.')
-
-    return x_pixel, y_pixel, width_pixel, height_pixel
+    return norm_x1, norm_y1, norm_x2, norm_y2
 
 
-def detect_ears(image_paths: [str], base_path: str) -> dict[str, list[int]]:
+def detect_ears(image_paths: [str], base_path: str) -> dict[Any, list[tuple[int, int, int, int, int, int]] | None]:
     """
     Detects ears on the given images. Returns the bounding box coordinates if an ear is detected.
     :param image_paths: file paths of the images.
     :param base_path: base path for cascade files.
     :return: dictionary of detected bounding boxes per images.
     """
-    logging.debug('Detecting ears on '+str(len(image_paths))+' images.')
+    logging.debug('Detecting ears on ' + str(len(image_paths)) + ' images.')
 
     left_ear_detector = cv2.CascadeClassifier(base_path + 'haarcascade_mcs_leftear.xml')
     right_ear_detector = cv2.CascadeClassifier(base_path + 'haarcascade_mcs_rightear.xml')
@@ -92,14 +105,15 @@ def detect_ears(image_paths: [str], base_path: str) -> dict[str, list[int]]:
         left_ear_detection = detect_ear(ear_detector=left_ear_detector, img_path=full_image_path)
         right_ear_detection = detect_ear(ear_detector=right_ear_detector, img_path=full_image_path)
 
+        squares = []
         for detection in [left_ear_detection, right_ear_detection]:
             if detection is not None:
-                x, y, w, h, img_width, img_height = detection
-                detections[image] = [x, y, w, h, img_width, img_height]
+                x1, y1, x2, y2, img_width, img_height = detection
 
-        logging.debug('Got '+str(len(detections))+' detections.')
+                squares.append((x1, y1, x2, y2, img_width, img_height))
+        detections[image] = squares if len(squares) > 0 else None
 
-        return detections
+    logging.info('Ears detected on ' + str(len(detections.keys())) + ' images.')
 
     return detections
 
@@ -115,20 +129,20 @@ def calculate_iou(ground_truth_box: [float], predicted_box: [float]) -> float:
     logging.debug('Calculating IOU for ground truth box: ' + str(ground_truth_box) +
                   ', predicted box: ' + str(predicted_box) + '.')
 
-    x1, y1, w1, h1 = ground_truth_box
-    x2, y2, w2, h2, _, _ = predicted_box
+    xa, ya, xa2, ya2 = ground_truth_box
+    xb, yb, xb2, yb2, _, _ = predicted_box
 
     # Calculate the coordinates of the intersection rectangle
-    x_intersection = max(x1, x2)
-    y_intersection = max(y1, y2)
-    x2_intersection = min(x1 + w1, x2 + w2)
-    y2_intersection = min(y1 + h1, y2 + h2)
+    x_intersection = max(xa, xb)
+    y_intersection = max(ya, yb)
+    x2_intersection = min(xa + xa2, xb + xb2)
+    y2_intersection = min(ya + ya2, yb + yb2)
 
     # Calculate the area of the intersection
     intersection_area = max(0, x2_intersection - x_intersection) * max(0, y2_intersection - y_intersection)
 
     # Calculate the area of the union
-    union_area = (w1 * h1) + (w2 * h2) - intersection_area
+    union_area = (xa2 * ya2) + (xb2 * yb2) - intersection_area
 
     # Calculate the IoU
     iou = intersection_area / union_area
@@ -138,35 +152,46 @@ def calculate_iou(ground_truth_box: [float], predicted_box: [float]) -> float:
     return iou
 
 
-def calculate_iou_sum(gt_boxes: {float}, predicted_boxes: {float}) -> float:
+def calculate_iou_avg(ground_truths: {float}, predictions: {float}) -> float:
     """
-    Calculates the average IOU for the given ground truth and predicted bounding boxes.
-    :param gt_boxes: ground truth bounding boxes.
-    :param predicted_boxes: predicted bounding boxes.
-    :return: IOU sum.
+    Calculates the average IOU for the given ground truths and predictions.
+    :param ground_truths: ground truths for all images.
+    :param predictions: predictions for all images.
+    :return: avg IOU.
     """
 
-    logging.debug('Calculating IOU sum for ' + str(len(gt_boxes)) + ' ground truth boxes and '
-                  + str(len(predicted_boxes)) + ' predicted boxes.')
+    logging.debug('Calculating avg IOU for ' + str(len(ground_truths)) + ' ground truths and '
+                  + str(len(predictions)) + ' predictions.')
 
-    scores = []
+    total_iou = 0
+    gt_box_count = 0
 
-    for key in gt_boxes.keys():
-        gt_box = gt_boxes[key]
-        if key not in predicted_boxes.keys():
-            scores.append(0)
-            continue
-        pred_box = predicted_boxes[key]
-        _, _, _, _, img_width, img_height = pred_box
-        x, y, w, h = gt_box
-        converted_gt_box = convert_percentage_to_pixel_coordinates(x_percentage=x,
-                                                                   y_percentage=y,
-                                                                   width_percentage=w,
-                                                                   height_percentage=h,
-                                                                   image_width=img_width,
-                                                                   image_height=img_height)
-        scores.append(calculate_iou(converted_gt_box, pred_box))
+    for filename in ground_truths.keys():
+        logging.debug('Calculating IOU for image: ' + filename + '.')
+        for gt_box in ground_truths[filename]:
+            best_iou = 0
+            gt_box_count += 1
+            if filename not in predictions.keys():
+                continue
 
-    logging.debug('Calculated IOU sum: ' + str(sum(scores)) + '.')
+            if predictions[filename] is not None:
+                for pred_box in predictions[filename]:
+                    _, _, _, _, img_width, img_height = pred_box
+                    x, y, x2, y2 = gt_box
+                    converted_gt_box = normalise_ground_truth_coordinates(x1=x,
+                                                                          y1=y,
+                                                                          x2=x2,
+                                                                          y2=y2,
+                                                                          image_width=img_width,
+                                                                          image_height=img_height)
 
-    return sum(scores)
+                    iou = calculate_iou(converted_gt_box, pred_box)
+                    best_iou = max(best_iou, iou)
+
+            total_iou += best_iou
+
+    average_iou = total_iou / gt_box_count
+
+    logging.debug('Calculated IOU avg: ' + str(average_iou) + '.')
+
+    return average_iou

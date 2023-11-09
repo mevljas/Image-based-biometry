@@ -1,6 +1,4 @@
 import logging
-from os import walk
-from typing import Tuple, Any
 
 
 class FileManager(object):
@@ -27,14 +25,20 @@ class FileManager(object):
         :return: a dictionary of read ground truths.
         """
         logging.debug('Loading ground truths from.')
-        grounds_truths = {}
+        grounds_truths = dict()
         for filename in filenames:
             full_filename = filename + '.txt'
-            with open(full_filename, "r") as file:
+            with (open(full_filename, "r") as file):
                 line = file.readline()
                 _, x, y, width, height = line.split()
-                grounds_truths[filename] = (float(x), float(y), float(width), float(height))
-        logging.debug('Loaded ' + str(len(grounds_truths)) + ' ground truths.')
+                square = grounds_truths.get(filename, [])
+                square.append((float(x), float(y), float(width), float(height)))
+                grounds_truths[filename] = square
+
+            logging.debug('Loaded ' + str(len(grounds_truths.get(filename, []))) +
+                          ' squares for gt file: ' + filename + '.')
+
+        logging.debug('Loaded ' + str(len(grounds_truths.keys())) + ' ground truth files.')
         return grounds_truths
 
     @staticmethod
