@@ -17,7 +17,7 @@ if __name__ == '__main__':
     coloredlogs.set_level(logging.DEBUG)
     logging.info('Started')
 
-    filenames, train_set, test_set, ground_truths = FileManager.prepare_data(base_path='data/', train_ratio=0.1)
+    filenames, train_set, test_set, ground_truths = FileManager.prepare_data(base_path='data/', train_ratio=0.7)
     viola_jones_model = train_viola_jones(image_paths=train_set, base_path='data/', ground_truths=ground_truths)
 
     logging.info('Finished')

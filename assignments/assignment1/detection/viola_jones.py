@@ -235,13 +235,13 @@ def train_viola_jones(image_paths: [str], base_path: str, ground_truths: {str}) 
     best_ioi = 0
     best_parameters = None
 
-    for scale_factor in np.arange(1.01, 2, 0.05):
+    for scale_factor in np.arange(1.01, 2, 0.1):
         logging.debug('Trying scale factor: ' + str(scale_factor))
-        for min_neighbors in range(1, 10, 2):
+        for min_neighbors in range(1, 20, 1):
             logging.debug('Trying min neighbors: ' + str(min_neighbors))
-            for min_size in range(10, 150, 20):
+            for min_size in range(10, 200, 10):
                 logging.debug('Trying min size: ' + str(min_size))
-                for max_size in range(200, 800, 100):
+                for max_size in range(300, 800, 50):
                     logging.debug('Trying parameters: scale_factor: '
                                   + str(scale_factor) + ', min_neighbors: '
                                   + str(min_neighbors) + ', min_size: '
