@@ -42,22 +42,23 @@ class FileManager(object):
         return grounds_truths
 
     @staticmethod
-    def prepare_data(base_path: str) -> tuple[[str], [str], [str], {str}]:
+    def prepare_data(base_path: str, train_ratio: float = 0.8) -> tuple[[str], [str], [str], {str}]:
         """
         Prepares the data for training and testing.
-        :param base_path: path to the directory whihc holds identities.txt file.
+        :param base_path: path to the directory which holds identities.txt file.
+                :param train_ratio: percentage of the train set.
         :return: train and test sets with cascade file paths.
         """
         logging.debug('Preparing data from: ' + base_path)
         filenames = FileManager.find_ear_filenames(base_path=base_path)
-        train_set, test_set = FileManager.split_data_set(filenames=filenames, train_ratio=0.1)
+        train_set, test_set = FileManager.split_data_set(filenames=filenames, train_ratio=train_ratio)
         ground_truths = FileManager.load_ground_truths(filenames=train_set)
         logging.debug('Prepared data.')
 
         return filenames, train_set, test_set, ground_truths
 
     @staticmethod
-    def split_data_set(filenames: [str], train_ratio: float = 0.8):
+    def split_data_set(filenames: [str], train_ratio: float):
         """
         Splits the given cascade file paths into train and test sets.
         :param filenames: a list of cascade file paths.
