@@ -1,11 +1,10 @@
 import logging
-from typing import Any
 
 import cv2
 import numpy as np
 
 
-def detect_ear(ear_detector: cv2.CascadeClassifier, img_path: str,
+def detect_ear(ear_detector: cv2.CascadeClassifier, img_name: str,
                scale_factor: float,
                min_neighbours: int,
                min_size: (int, int),
@@ -17,11 +16,11 @@ def detect_ear(ear_detector: cv2.CascadeClassifier, img_path: str,
     :param min_neighbours: How many neighbors should contribute in a single bounding box.
     :param scale_factor: How much the object’s size is reduced to the original image (1-2).
     :param ear_detector:  cascade classifier for ear detection.
-    :param img_path:  path of the image.
+    :param img_name:  name of the image without an extension.
     :return:  bounding box coordinates if an ear is detected.
     """
     logging.debug('Detecting ears with ear detector: ' + str(ear_detector))
-    img = cv2.imread(img_path)
+    img = cv2.imread('data/ears/' + img_name + '.png')
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     detections = []
@@ -93,16 +92,16 @@ def normalise_ground_truth_coordinates(x1: float,
     return norm_x1, norm_y1, norm_x2, norm_y2
 
 
-def detect_ears(image_paths: [str],
+def detect_ears(image_names: [str],
                 base_path: str,
                 scale_factor: float,
                 min_neighbours: int,
                 min_size: (int, int),
                 max_size: (int, int)
-                ) -> dict[Any, list[tuple[int, int, int, int, int, int]] | None]:
+                ) -> dict[str, list[tuple[int, int, int, int, int, int]] | None]:
     """
     Detects ears on the given images. Returns the bounding box coordinates if an ear is detected.
-    :param image_paths: file paths of the images.
+    :param image_names: image names without extensions.
     :param base_path: base path for cascade files.
     :param max_size:  Maximum possible object size.
     :param min_size: Minimum possible object size.
@@ -110,22 +109,21 @@ def detect_ears(image_paths: [str],
     :param scale_factor: How much the object’s size is reduced to the original image (1-2).
     :return: dictionary of detected bounding boxes per images.
     """
-    logging.debug('Detecting ears on ' + str(len(image_paths)) + ' images.')
+    logging.debug('Detecting ears on ' + str(len(image_names)) + ' images.')
 
     left_ear_detector = cv2.CascadeClassifier(base_path + 'haarcascade_mcs_leftear.xml')
     right_ear_detector = cv2.CascadeClassifier(base_path + 'haarcascade_mcs_rightear.xml')
     detections = dict()
 
-    for image in image_paths:
-        full_image_path = image + '.png'
-        logging.debug(f'Detecting ears on image: ' + full_image_path)
+    for image in image_names:
+        logging.debug(f'Detecting ears on image: ' + image)
 
-        left_ear_detection = detect_ear(ear_detector=left_ear_detector, img_path=full_image_path,
+        left_ear_detection = detect_ear(ear_detector=left_ear_detector, img_name=image,
                                         scale_factor=scale_factor,
                                         min_neighbours=min_neighbours,
                                         min_size=min_size,
                                         max_size=max_size)
-        right_ear_detection = detect_ear(ear_detector=right_ear_detector, img_path=full_image_path,
+        right_ear_detection = detect_ear(ear_detector=right_ear_detector, img_name=image,
                                          scale_factor=scale_factor,
                                          min_neighbours=min_neighbours,
                                          min_size=min_size,
@@ -223,33 +221,37 @@ def calculate_iou_avg(ground_truths: {float}, predictions: {float}) -> float:
     return average_iou
 
 
-def train_viola_jones(image_paths: [str], base_path: str, ground_truths: {str}) -> (float, (float, int, int, int)):
+def train_viola_jones(image_paths: [str], data_path: str, ground_truths: {str}) -> (
+        float, (float, int, int, int),
+        dict[str, list[tuple[int, int, int, int, int, int]], {str}]
+):
     """
     Trains the Viola-Jones model with different parameters and find parameters with the highest average iou.
     :param image_paths: file paths of the images.
-    :param base_path: base path for cascade files.
+    :param data_path: base path for cascade files.
     :param ground_truths: ground truths for all images.
     :return: 
     """
 
     best_ioi = 0
     best_parameters = None
+    best_detections = None
 
-    for scale_factor in np.arange(1.01, 2, 0.1):
+    for scale_factor in np.arange(1.01, 1.1, 0.1):
         logging.debug('Trying scale factor: ' + str(scale_factor))
-        for min_neighbors in range(1, 20, 1):
+        for min_neighbors in range(5, 6, 1):
             logging.debug('Trying min neighbors: ' + str(min_neighbors))
-            for min_size in range(10, 200, 10):
+            for min_size in range(30, 31, 10):
                 logging.debug('Trying min size: ' + str(min_size))
-                for max_size in range(300, 800, 50):
+                for max_size in range(800, 801, 50):
                     logging.debug('Trying parameters: scale_factor: '
                                   + str(scale_factor) + ', min_neighbors: '
                                   + str(min_neighbors) + ', min_size: '
                                   + str(min_size) + ', max_size: '
                                   + str(max_size))
 
-                    detections = detect_ears(image_paths=image_paths,
-                                             base_path=base_path,
+                    detections = detect_ears(image_names=image_paths,
+                                             base_path=data_path,
                                              scale_factor=scale_factor,
                                              min_neighbours=min_neighbors,
                                              min_size=min_size,
@@ -257,9 +259,24 @@ def train_viola_jones(image_paths: [str], base_path: str, ground_truths: {str}) 
                     avg_ioi = calculate_iou_avg(predictions=detections, ground_truths=ground_truths)
                     if avg_ioi > best_ioi:
                         best_ioi = avg_ioi
+                        best_detections = detections
                         best_parameters = (scale_factor, min_neighbors, min_size, max_size)
                         logging.info('New best IOU: ' + str(best_ioi) + ' with parameters: ' + str(best_parameters))
 
     logging.info('Best IOU: ' + str(best_ioi) + ' with parameters: ' + str(best_parameters))
 
-    return best_ioi, best_parameters
+    normalized_ground_truths = dict()
+    for filename in ground_truths.keys():
+        pred_box = best_detections[filename][0]
+        _, _, _, _, img_width, img_height = pred_box
+        normalized_ground_truths[filename] = []
+        for gt_box in ground_truths[filename]:
+            x, y, x2, y2 = gt_box
+            normalized_ground_truths[filename].append(normalise_ground_truth_coordinates(x1=x,
+                                                                                         y1=y,
+                                                                                         x2=x2,
+                                                                                         y2=y2,
+                                                                                         image_width=img_width,
+                                                                                         image_height=img_height))
+
+    return best_ioi, best_parameters, best_detections, normalized_ground_truths

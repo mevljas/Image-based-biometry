@@ -160,3 +160,4 @@ cython_debug/
 *.idea/
 
 assignments/assignment1/data/
+assignments/assignment1/output/
