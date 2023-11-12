@@ -2,7 +2,7 @@ import logging
 
 import coloredlogs
 
-from recognition.local_binary_pattern.sk_local_binary_pattern import SkLocalBinaryPattern
+from recognition.local_binary_pattern.my_local_binary_pattern import MyLocalBinaryPattern
 from utils.data_loader import FileManager
 
 if __name__ == '__main__':
@@ -20,8 +20,9 @@ if __name__ == '__main__':
     #                        grounds_truths=normalized_ground_truths,
     #                        save_directory=output_path)
 
-    # LocalBinaryPattern.train_local_binary_pattern(data_path=output_path + 'ground_truths/', ground_truths=ground_truths)
-    SkLocalBinaryPattern.train_local_binary_pattern(data_path=output_path + 'ground_truths/',
+    MyLocalBinaryPattern.train_local_binary_pattern(data_path=output_path + 'ground_truths/',
                                                     ground_truths=ground_truths)
+    # SkLocalBinaryPattern.train_local_binary_pattern(data_path=output_path + 'ground_truths/',
+    #                                                ground_truths=ground_truths)
 
     logging.info('Finished')
