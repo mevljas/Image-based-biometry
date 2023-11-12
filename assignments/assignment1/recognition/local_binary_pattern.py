@@ -1,3 +1,4 @@
+import logging
 import os
 
 import cv2
@@ -40,13 +41,19 @@ class LocalBinaryPattern(object):
         return transitions <= 2
 
     @staticmethod
-    def draw_histogram(lbp_image, title):
-        hist, bins = np.histogram(lbp_image.flatten(), bins=range(0, 60), density=True)
-        width = 0.7 * (bins[1] - bins[0])
-        center = (bins[:-1] + bins[1:]) / 2
-        plt.bar(center, hist, align='center', width=width)
-        plt.title(title)
-        plt.show()
+    def draw_histograms(histograms: list):
+        output_list_len = len(histograms)
+        for i in range(output_list_len):
+            (lbp_image, title, description) = histograms[i]
+            plt.gca().set_position((.1, .3, .8, .6))  # to make a bit of room for extra text
+            plt.plot(cv2.calcHist([lbp_image], [0], None, [256], [0, 256]), color="black")
+            plt.xlim([0, 260])
+            plt.title(title)
+            plt.xlabel("Bins")
+            plt.ylabel("Number of pixels")
+            plt.figtext(.02, .02,
+                        description)
+            plt.show()
 
     @staticmethod
     def train_local_binary_pattern(data_path: str, ground_truths: {str}) -> (
@@ -64,18 +71,37 @@ class LocalBinaryPattern(object):
         filenames = [os.path.join(dirpath, f) for (dirpath, dirnames, filenames) in os.walk(data_path) for f in
                      filenames]
 
+        histograms = []
+
         for filename in filenames:
+            logging.debug('Calculating LBP for: ' + filename)
             img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
 
-            radii = [1, 2, 3]
-            code_lengths = [8, 16]
-            overlaps = [1, 2]
-            uniform_options = [True, False]
+            # radii = [1, 2, 3]
+            # code_lengths = [8, 16]
+            # overlaps = [1, 2]
+            # uniform_options = [True, False]
+
+            radii = [2]
+            code_lengths = [8]
+            overlaps = [1]
+            uniform_options = [True]
 
             for radius in radii:
                 for code_length in code_lengths:
                     for overlap in overlaps:
                         for uniform_option in uniform_options:
+                            logging.debug('Calculating LBP for: ' + filename +
+                                          ' with parameters: radius: ' + str(radius) +
+                                          ', code_length: ' + str(code_length) +
+                                          ', overlap: ' + str(overlap) +
+                                          ', uniform_option: ' + str(uniform_option) + '.')
                             lbp_image = LocalBinaryPattern.calculate_lbp(img, radius, code_length, uniform_option)
-                            title = f"LBP - Radius: {radius}, Code Length: {code_length}, Overlap: {overlap}, Uniform: {uniform_option}"
-                            LocalBinaryPattern.draw_histogram(lbp_image, title)
+                            title = f"LBP {filename.split('/')[-1]}"
+                            description = f"""
+                            
+                            Radius: {radius}, Code Length: {code_length}, Overlap: {overlap}, Uniform: {uniform_option}"""
+                            histograms.append((lbp_image, title, description))
+
+        logging.debug('Finished calculating LBP for all images.')
+        LocalBinaryPattern.draw_histograms(histograms)
