@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class LocalBinaryPattern(object):
+class MyLocalBinaryPattern(object):
     @staticmethod
     def get_lbp_pixel(img, center, x, y):
         pixel_value = 0
@@ -25,10 +25,10 @@ class LocalBinaryPattern(object):
                 for k in range(num_points):
                     x = int(i + radius * np.cos(2 * np.pi * k / num_points))
                     y = int(j - radius * np.sin(2 * np.pi * k / num_points))
-                    pixel_value = LocalBinaryPattern.get_lbp_pixel(img, center, x, y)
+                    pixel_value = MyLocalBinaryPattern.get_lbp_pixel(img, center, x, y)
                     binary_values.append(pixel_value)
                 decimal_value = sum([binary_values[p] * (2 ** p) for p in range(num_points)])
-                if uniform and LocalBinaryPattern.is_uniform(binary_values):
+                if uniform and MyLocalBinaryPattern.is_uniform(binary_values):
                     lbp_image[i, j] = decimal_value
                 else:
                     lbp_image[i, j] = num_points + 1  # Mark non-uniform patterns
@@ -96,7 +96,7 @@ class LocalBinaryPattern(object):
                                           ', code_length: ' + str(code_length) +
                                           ', overlap: ' + str(overlap) +
                                           ', uniform_option: ' + str(uniform_option) + '.')
-                            lbp_image = LocalBinaryPattern.calculate_lbp(img, radius, code_length, uniform_option)
+                            lbp_image = MyLocalBinaryPattern.calculate_lbp(img, radius, code_length, uniform_option)
                             title = f"LBP {filename.split('/')[-1]}"
                             description = f"""
                             
@@ -104,4 +104,4 @@ class LocalBinaryPattern(object):
                             histograms.append((lbp_image, title, description))
 
         logging.debug('Finished calculating LBP for all images.')
-        LocalBinaryPattern.draw_histograms(histograms)
+        # LocalBinaryPattern.draw_histograms(histograms)
