@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-from matplotlib import pyplot as plt
 from skimage import feature
 from skimage import io
 from skimage.color import rgb2gray
@@ -38,13 +37,6 @@ class SkLocalBinaryPattern(object):
         return np.array(all_features)
 
     @staticmethod
-    def draw_histogram(lbp_image, title):
-        hist, _ = np.histogram(lbp_image.ravel(), bins=np.arange(0, 59), range=[0, 58])
-        plt.bar(range(58), hist)
-        plt.title(title)
-        plt.show()
-
-    @staticmethod
     def train_local_binary_pattern(data_path: str, ground_truths: {str}) -> (
             float, (float, int, int, int),
             dict[str, list[tuple[int, int, int, int, int, int]], {str}]
@@ -71,6 +63,5 @@ class SkLocalBinaryPattern(object):
         # Display the extracted features
         print("Extracted features:")
         print(features)
-        # SkLocalBinaryPattern.draw_histogram(features[0], "LBP Histogram")
 
         # You can now use these features for further analysis or machine learning tasks.
