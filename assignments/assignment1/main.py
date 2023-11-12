@@ -2,7 +2,7 @@ import logging
 
 import coloredlogs
 
-from detection.viola_jones import train_viola_jones
+from recognition.local_binary_pattern import LocalBinaryPattern
 from utils.data_loader import FileManager
 
 if __name__ == '__main__':
@@ -10,12 +10,15 @@ if __name__ == '__main__':
     coloredlogs.set_level(logging.DEBUG)
     logging.info('Started')
     data_path = 'data/'
+    output_path = 'output/'
 
     filenames, train_set, test_set, ground_truths = FileManager.prepare_data(data_path=data_path, train_ratio=0.01)
-    viola_jones_model = train_viola_jones(image_paths=train_set, data_path=data_path, ground_truths=ground_truths)
-    _, _, detections, normalized_ground_truths = viola_jones_model
-    FileManager.save_images(detections=detections,
-                            grounds_truths=normalized_ground_truths,
-                            save_directory='output/')
+    # viola_jones_model = train_viola_jones(image_paths=train_set, data_path=data_path, ground_truths=ground_truths)
+    # _, _, detections, normalized_ground_truths = viola_jones_model
+    # FileManager.save_images(detections=detections,
+    #                         grounds_truths=normalized_ground_truths,
+    #                         save_directory=output_path)
+
+    LocalBinaryPattern.train_local_binary_pattern(data_path=output_path + 'ground_truths/', ground_truths=ground_truths)
 
     logging.info('Finished')
