@@ -41,23 +41,8 @@ class MyLocalBinaryPattern(object):
         return transitions <= 2
 
     @staticmethod
-    def draw_histograms(histograms: list):
-        output_list_len = len(histograms)
-        for i in range(output_list_len):
-            (lbp_image, title, description) = histograms[i]
-            plt.gca().set_position((.1, .3, .8, .6))  # to make a bit of room for extra text
-            plt.plot(cv2.calcHist([lbp_image], [0], None, [256], [0, 256]), color="black")
-            plt.xlim([0, 260])
-            plt.title(title)
-            plt.xlabel("Bins")
-            plt.ylabel("Number of pixels")
-            plt.figtext(.02, .02,
-                        description)
-            plt.show()
-
-    @staticmethod
     def save_histograms(histograms: list):
-        dir = 'output/local_binary_pattern/'
+        dir = 'output/my_local_binary_pattern/'
         if not os.path.exists(dir):
             os.makedirs(dir)
         output_list_len = len(histograms)

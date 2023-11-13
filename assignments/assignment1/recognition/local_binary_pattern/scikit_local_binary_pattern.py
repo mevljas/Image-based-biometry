@@ -1,6 +1,8 @@
 import os
 
+import cv2
 import numpy as np
+from matplotlib import pyplot as plt
 from skimage import feature
 from skimage import io
 from skimage.color import rgb2gray
@@ -35,6 +37,24 @@ class ScikitLocalBinaryPattern(object):
             all_features.append(features)
 
         return np.array(all_features)
+
+    @staticmethod
+    def save_histograms(histograms: list):
+        dir = 'output/scikit_local_binary_pattern/'
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        output_list_len = len(histograms)
+        for i in range(output_list_len):
+            (lbp_image, title, description, filename) = histograms[i]
+            plt.gca().set_position((.1, .3, .8, .6))  # to make a bit of room for extra text
+            plt.plot(cv2.calcHist([lbp_image], [0], None, [256], [0, 256]), color="black")
+            plt.xlim([0, 260])
+            plt.title(title)
+            plt.xlabel("Bins")
+            plt.ylabel("Number of pixels")
+            plt.figtext(.02, .02,
+                        description)
+            plt.savefig(dir + filename)
 
     @staticmethod
     def train_local_binary_pattern(data_path: str, ground_truths: {str}) -> (
