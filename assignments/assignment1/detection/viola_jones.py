@@ -95,7 +95,7 @@ class ViolaJones(object):
         return norm_x1, norm_y1, norm_x2, norm_y2
 
     @staticmethod
-    def detect_ears(image_names: [str],
+    def detect_ears(filenames: [str],
                     base_path: str,
                     scale_factor: float,
                     min_neighbours: int,
@@ -104,7 +104,7 @@ class ViolaJones(object):
                     ) -> dict[str, list[tuple[int, int, int, int, int, int]] | None]:
         """
         Detects ears on the given images. Returns the bounding box coordinates if an ear is detected.
-        :param image_names: image names without extensions.
+        :param filenames: image names without extensions and identities.
         :param base_path: base path for cascade files.
         :param max_size:  Maximum possible object size.
         :param min_size: Minimum possible object size.
@@ -112,13 +112,13 @@ class ViolaJones(object):
         :param scale_factor: How much the object’s size is reduced to the original image (1-2).
         :return: dictionary of detected bounding boxes per images.
         """
-        logging.debug('Detecting ears on ' + str(len(image_names)) + ' images.')
+        logging.debug('Detecting ears on ' + str(len(filenames)) + ' images.')
 
         left_ear_detector = cv2.CascadeClassifier(base_path + 'haarcascade_mcs_leftear.xml')
         right_ear_detector = cv2.CascadeClassifier(base_path + 'haarcascade_mcs_rightear.xml')
         detections = dict()
 
-        for image in image_names:
+        for image in filenames:
             logging.debug(f'Detecting ears on image: ' + image)
 
             left_ear_detection = ViolaJones.detect_ear(ear_detector=left_ear_detector, img_name=image,
@@ -225,13 +225,13 @@ class ViolaJones(object):
         return average_iou
 
     @staticmethod
-    def train_viola_jones(image_paths: [str], data_path: str, ground_truths: {str}) -> (
+    def train_viola_jones(filenames: [str], data_path: str, ground_truths: {str}) -> (
             float, (float, int, int, int),
             dict[str, list[tuple[int, int, int, int, int, int]], {str}]
     ):
         """
         Trains the Viola-Jones model with different parameters and find parameters with the highest average iou.
-        :param image_paths: file paths of the images.
+        :param filenames: file paths of the images and identities.
         :param data_path: base path for cascade files.
         :param ground_truths: ground truths for all images.
         :return:
@@ -254,7 +254,7 @@ class ViolaJones(object):
                                       + str(min_size) + ', max_size: '
                                       + str(max_size))
 
-                        detections = ViolaJones.detect_ears(image_names=image_paths,
+                        detections = ViolaJones.detect_ears(filenames=filenames,
                                                             base_path=data_path,
                                                             scale_factor=scale_factor,
                                                             min_neighbours=min_neighbors,

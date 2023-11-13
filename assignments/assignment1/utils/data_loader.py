@@ -6,11 +6,11 @@ import cv2
 
 class FileManager(object):
     @staticmethod
-    def find_ear_filenames(base_path: str) -> [str]:
+    def load_identities(base_path: str) -> ([str], dict[str]):
         """
-        Reads the filenames from the given identities.txt file on base_path.
+        Reads the filenames and identities from the given identities.txt file on base_path.
         :param base_path: path to the directory which holds identities.txt file.
-        :return: a list of cascade file paths.
+        :return: a lists of filenames and identities.
         """
         logging.debug('Reading ear filenames from: ' + base_path)
         lines = []
@@ -18,7 +18,16 @@ class FileManager(object):
             # Reading from a file
             lines = file.readlines()
         logging.debug('Found ' + str(len(lines)) + ' ear filenames.')
-        return [(line.split(" ")[0].split(".png")[0]) for line in lines]
+
+        identities = dict()
+        filenames = []
+        for line in lines:
+            filename, identity = line.split(" ")
+            short_filename = filename.split(".png")[0]
+            filenames.append(short_filename)
+            identities[short_filename] = identity
+
+        return filenames, identities
 
     @staticmethod
     def load_ground_truths(filenames: [str]) -> {str}:
@@ -45,7 +54,7 @@ class FileManager(object):
         return grounds_truths
 
     @staticmethod
-    def prepare_data(data_path: str, train_ratio: float = 0.8) -> tuple[[str], [str], [str], {str}]:
+    def prepare_data(data_path: str, train_ratio: float = 0.8) -> tuple[[str], [str], [str], {str}, {list}]:
         """
         Prepares the data for training and testing.
         :param data_path: path to the directory which holds identities.txt file.
@@ -53,12 +62,12 @@ class FileManager(object):
         :return: train and test sets with cascade file paths.
         """
         logging.debug('Preparing data from: ' + data_path)
-        filenames = FileManager.find_ear_filenames(base_path=data_path)
+        filenames, identities = FileManager.load_identities(base_path=data_path)
         train_set, test_set = FileManager.split_data_set(filenames=filenames, train_ratio=train_ratio)
         ground_truths = FileManager.load_ground_truths(filenames=train_set)
         logging.debug('Prepared data.')
 
-        return filenames, train_set, test_set, ground_truths
+        return filenames, train_set, test_set, ground_truths, identities
 
     @staticmethod
     def split_data_set(filenames: [str], train_ratio: float):
