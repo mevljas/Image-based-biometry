@@ -14,7 +14,7 @@ class FileManager(object):
         """
         logging.debug('Reading ear filenames from: ' + base_path)
         lines = []
-        with open(base_path + 'identites.txt', "r") as file:
+        with open(base_path + 'identities.txt', "r") as file:
             # Reading from a file
             lines = file.readlines()
         logging.debug('Found ' + str(len(lines)) + ' ear filenames.')
@@ -142,7 +142,7 @@ class FileManager(object):
             if detection_squares is not None:
                 square_counter = 0
                 for detection_square in detection_squares:
-                    x, y, x2, y2, _, _ = detection_square
+                    x, y, x2, y2 = detection_square
                     FileManager.crop_image(image=image,
                                            image_name=image_name + '_' + str(square_counter) + '.png',
                                            save_directory=detected_path,

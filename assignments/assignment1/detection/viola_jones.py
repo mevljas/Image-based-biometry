@@ -10,7 +10,7 @@ class ViolaJones(object):
                    scale_factor: float,
                    min_neighbours: int,
                    min_size: (int, int),
-                   max_size: (int, int)) -> (int, int, int, int, int, int):
+                   max_size: (int, int)) -> ((int, int, int, int, int, int), (int, int)):
         """
         Detects ears on the given image. Returns the bounding box coordinates if an ear is detected.
         :param max_size:  Maximum possible object size.
@@ -19,13 +19,14 @@ class ViolaJones(object):
         :param scale_factor: How much the object’s size is reduced to the original image (1-2).
         :param ear_detector:  cascade classifier for ear detection.
         :param img_name:  name of the image without an extension.
-        :return:  bounding box coordinates if an ear is detected.
+        :return:  bounding box coordinates of ears and image size.
         """
-        logging.debug('Detecting ears with ear detector: ' + str(ear_detector))
+        # logging.debug('Detecting ears with ear detector: ' + str(ear_detector))
         img = cv2.imread('data/ears/' + img_name + '.png')
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         detections = []
+        image_size = dict()
 
         # results is a list of bounding box coordinates (x,y,width,height) around the detected object.
         results = ear_detector.detectMultiScale(gray,
@@ -42,7 +43,7 @@ class ViolaJones(object):
             # Draw rectangles after passing the coordinates.
             # cv2.rectangle(img, (x, y), (x + width, y + height), (0, 255, 0), 2)
 
-            detections.append((x, y, x + width, y + height, img.shape[1], img.shape[0]))
+            detections.append((x, y, x + width, y + height))
 
         logging.debug('Detected ' + str(len(detections)) + ' ears.')
 
@@ -51,15 +52,33 @@ class ViolaJones(object):
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
 
-        return detections[0] if len(detections) > 0 else None
+        return detections, (img.shape[1], img.shape[0])
 
     @staticmethod
-    def normalise_ground_truth_coordinates(x1: float,
-                                           y1: float,
-                                           x2: float,
-                                           y2: float,
-                                           image_width: int,
-                                           image_height: int) -> (float, float, float, float):
+    def normalise_ground_truths(ground_truths: dict, image_sizes: dict):
+        normalized_ground_truths = dict()
+        for filename, gt_boxes in ground_truths.items():
+            normalized_gt_boxes = []
+            img_width, img_height = image_sizes[filename]
+
+            for normalized_gt_box in gt_boxes:
+                x, y, x2, y2 = normalized_gt_box
+                normalized_gt_boxes.append(
+                    ViolaJones.normalise_ground_truth(x1=x, y1=y, x2=x2, y2=y2,
+                                                      image_width=img_width,
+                                                      image_height=img_height))
+
+            normalized_ground_truths[filename] = normalized_gt_boxes
+
+        return normalized_ground_truths
+
+    @staticmethod
+    def normalise_ground_truth(x1: float,
+                               y1: float,
+                               x2: float,
+                               y2: float,
+                               image_width: int,
+                               image_height: int) -> (float, float, float, float):
         """
         Normalizes the ground truth coordinates. The coordinates are given as percentages of the image size.
         :param x1: x in percentage of the image width.
@@ -101,7 +120,7 @@ class ViolaJones(object):
                     min_neighbours: int,
                     min_size: (int, int),
                     max_size: (int, int)
-                    ) -> dict[str, list[tuple[int, int, int, int, int, int]] | None]:
+                    ) -> (dict[str, list[tuple[int, int, int, int, int, int]] | None], (int, int)):
         """
         Detects ears on the given images. Returns the bounding box coordinates if an ear is detected.
         :param filenames: image names without extensions and identities.
@@ -110,40 +129,43 @@ class ViolaJones(object):
         :param min_size: Minimum possible object size.
         :param min_neighbours: How many neighbors should contribute in a single bounding box.
         :param scale_factor: How much the object’s size is reduced to the original image (1-2).
-        :return: dictionary of detected bounding boxes per images.
+        :return: dictionaries of detected bounding boxes per images and image sizes.
         """
         logging.debug('Detecting ears on ' + str(len(filenames)) + ' images.')
 
         left_ear_detector = cv2.CascadeClassifier(base_path + 'haarcascade_mcs_leftear.xml')
         right_ear_detector = cv2.CascadeClassifier(base_path + 'haarcascade_mcs_rightear.xml')
         detections = dict()
+        image_sizes = dict()
 
         for image in filenames:
             logging.debug(f'Detecting ears on image: ' + image)
 
-            left_ear_detection = ViolaJones.detect_ear(ear_detector=left_ear_detector, img_name=image,
-                                                       scale_factor=scale_factor,
-                                                       min_neighbours=min_neighbours,
-                                                       min_size=min_size,
-                                                       max_size=max_size)
+            left_ear_detections, image_size = ViolaJones.detect_ear(ear_detector=left_ear_detector, img_name=image,
+                                                                    scale_factor=scale_factor,
+                                                                    min_neighbours=min_neighbours,
+                                                                    min_size=min_size,
+                                                                    max_size=max_size)
 
-            right_ear_detection = ViolaJones.detect_ear(ear_detector=right_ear_detector, img_name=image,
-                                                        scale_factor=scale_factor,
-                                                        min_neighbours=min_neighbours,
-                                                        min_size=min_size,
-                                                        max_size=max_size)
+            right_ear_detections, _ = ViolaJones.detect_ear(ear_detector=right_ear_detector, img_name=image,
+                                                            scale_factor=scale_factor,
+                                                            min_neighbours=min_neighbours,
+                                                            min_size=min_size,
+                                                            max_size=max_size)
+
+            image_sizes[image] = image_size
 
             squares = []
-            for detection in [left_ear_detection, right_ear_detection]:
+            for detection in left_ear_detections + right_ear_detections:
                 if detection is not None:
-                    x1, y1, x2, y2, img_width, img_height = detection
+                    x1, y1, x2, y2 = detection
+                    squares.append((x1, y1, x2, y2))
 
-                    squares.append((x1, y1, x2, y2, img_width, img_height))
             detections[image] = squares if len(squares) > 0 else None
 
         logging.debug('Ears detected on ' + str(len(detections.keys())) + ' images.')
 
-        return detections
+        return detections, image_sizes
 
     @staticmethod
     def calculate_iou(ground_truth_box: [float], predicted_box: [float]) -> float:
@@ -158,7 +180,7 @@ class ViolaJones(object):
                       ', predicted box: ' + str(predicted_box) + '.')
 
         xa, ya, xa2, ya2 = ground_truth_box
-        xb, yb, xb2, yb2, _, _ = predicted_box
+        xb, yb, xb2, yb2 = predicted_box
 
         # Calculate the coordinates of the intersection rectangle
         x_intersection = max(xa, xb)
@@ -203,17 +225,9 @@ class ViolaJones(object):
                     continue
 
                 if predictions[filename] is not None:
-                    for pred_box in predictions[filename]:
-                        _, _, _, _, img_width, img_height = pred_box
-                        x, y, x2, y2 = gt_box
-                        converted_gt_box = ViolaJones.normalise_ground_truth_coordinates(x1=x,
-                                                                                         y1=y,
-                                                                                         x2=x2,
-                                                                                         y2=y2,
-                                                                                         image_width=img_width,
-                                                                                         image_height=img_height)
 
-                        iou = ViolaJones.calculate_iou(converted_gt_box, pred_box)
+                    for pred_box in predictions[filename]:
+                        iou = ViolaJones.calculate_iou(gt_box, pred_box)
                         best_iou = max(best_iou, iou)
 
                 total_iou += best_iou
@@ -240,32 +254,40 @@ class ViolaJones(object):
         best_ioi = 0
         best_parameters = None
         best_detections = None
+        image_sizes = None
+        normalized_ground_truths = None
 
         # New best IOU: 0.4829996133798827 with parameters: (1.01, 2, 20, 700)
         # New best IOU: 0.48652077174323793 with parameters: (1.01, 3, 20, 525)
         # New best IOU: 0.49088017522079186 with parameters: (1.01, 3, 20, 575)
         # New best IOU: 0.4928115018246467 with parameters: (1.01, 3, 20, 650)
 
-        for scale_factor in np.arange(1.01, 1.05, 0.01):
+        for scale_factor in np.arange(1.01, 1.02, 0.1):
             logging.debug('Trying scale factor: ' + str(scale_factor))
-            for min_neighbors in range(1, 8, 1):
+            for min_neighbors in range(4, 5, 1):
                 logging.debug('Trying min neighbors: ' + str(min_neighbors))
-                for min_size in range(20, 50, 5):
+                for min_size in range(30, 31, 5):
                     logging.debug('Trying min size: ' + str(min_size))
-                    for max_size in range(450, 800, 25):
+                    for max_size in range(550, 551, 25):
                         logging.debug('Trying parameters: scale_factor: '
                                       + str(scale_factor) + ', min_neighbors: '
                                       + str(min_neighbors) + ', min_size: '
                                       + str(min_size) + ', max_size: '
                                       + str(max_size))
 
-                        detections = ViolaJones.detect_ears(filenames=filenames,
-                                                            base_path=data_path,
-                                                            scale_factor=scale_factor,
-                                                            min_neighbours=min_neighbors,
-                                                            min_size=min_size,
-                                                            max_size=max_size)
-                        avg_ioi = ViolaJones.calculate_iou_avg(predictions=detections, ground_truths=ground_truths)
+                        detections, image_sizes = ViolaJones.detect_ears(filenames=filenames,
+                                                                         base_path=data_path,
+                                                                         scale_factor=scale_factor,
+                                                                         min_neighbours=min_neighbors,
+                                                                         min_size=min_size,
+                                                                         max_size=max_size)
+
+                        if normalized_ground_truths is None:
+                            normalized_ground_truths = ViolaJones.normalise_ground_truths(ground_truths=ground_truths,
+                                                                                          image_sizes=image_sizes)
+
+                        avg_ioi = ViolaJones.calculate_iou_avg(predictions=detections,
+                                                               ground_truths=normalized_ground_truths)
                         if avg_ioi > best_ioi:
                             best_ioi = avg_ioi
                             best_detections = detections
@@ -273,19 +295,5 @@ class ViolaJones(object):
                             logging.info('New best IOU: ' + str(best_ioi) + ' with parameters: ' + str(best_parameters))
 
         logging.info('Best IOU: ' + str(best_ioi) + ' with parameters: ' + str(best_parameters))
-
-        normalized_ground_truths = dict()
-        for filename in ground_truths.keys():
-            pred_box = best_detections[filename][0]
-            _, _, _, _, img_width, img_height = pred_box
-            normalized_ground_truths[filename] = []
-            for gt_box in ground_truths[filename]:
-                x, y, x2, y2 = gt_box
-                normalized_ground_truths[filename].append(ViolaJones.normalise_ground_truth_coordinates(x1=x,
-                                                                                                        y1=y,
-                                                                                                        x2=x2,
-                                                                                                        y2=y2,
-                                                                                                        image_width=img_width,
-                                                                                                        image_height=img_height))
 
         return best_ioi, best_parameters, best_detections, normalized_ground_truths

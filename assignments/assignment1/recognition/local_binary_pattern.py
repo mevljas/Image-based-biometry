@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 
-from recognition.my_local_binary_pattern import MyLocalBinaryPattern
+from recognition.scikit_local_binary_pattern import ScikitLocalBinaryPattern
 
 
 class LocalBinaryPattern(object):
@@ -40,52 +40,26 @@ class LocalBinaryPattern(object):
         return most_similar_image
 
     @staticmethod
-    def train_local_binary_pattern(data_path: str) -> (
-            float, (float, int, int, int),
-            dict[str, list[tuple[int, int, int, int, int, int]], {str}]
-    ):
+    def train_local_binary_pattern(data_path: str, identities: dict) -> (int, int, int):
         """
         Trains the local_binary_pattern model with different parameters and find parameters with the highest accuracy.
+        :param identities: dictionary of filenames and their identities.
         :param data_path: base path for cascade files.
-        :param ground_truths: ground truths for all images.
         :return:
         """
 
-        # image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-        # image = cv2.resize(image, (200, 200))
-        #
-        # custom_lbp_image = custom_lbp(image, radius, n_points, 'uniform' if uniform else 'default')
-        #
-        # lbp_sklearn = feature.local_binary_pattern(image, n_points, radius, method='uniform' if uniform else 'default')
-        #
-        # plt.subplot(1, 3, 1)
-        # plt.imshow(image, cmap='gray')
-        # plt.title('Original Image')
-        #
-        # plt.subplot(1, 3, 2)
-        # plt.imshow(custom_lbp_image, cmap='gray')
-        # plt.title('Custom LBP')
-        #
-        # plt.subplot(1, 3, 3)
-        # plt.imshow(lbp_sklearn, cmap='gray')
-        # plt.title('Sklearn LBP')
-        #
-        # plt.show()
-        #
-        # draw_histogram(custom_lbp_image, 'Custom LBP Histogram')
-        # draw_histogram(lbp_sklearn, 'Sklearn LBP Histogram')
-
         # Find all files in the given directory
-        files = [(os.path.join(dirpath, f), f) for (dirpath, dirnames, files) in os.walk(data_path) for f in
+        files = [(os.path.join(dirpath, f), f.split('_')[0]) for (dirpath, dirnames, files) in os.walk(data_path) for
+                 f in
                  files]
 
         best_accuracy = 0
-        best_parameters = (0, 0, 0, 0)
+        best_parameters = (0, 0, 0)
 
         # for radius in [1, 2, 3]:
         for radius in [1]:
             # for n_points in [8, 16]:
-            for n_points in [8]:
+            for n_points in [16]:
                 # for uniform_option in [True, False]:
                 for uniform_option in [True]:
                     lbp_features = []
@@ -99,7 +73,8 @@ class LocalBinaryPattern(object):
                                       ' with parameters: radius: ' + str(radius) +
                                       ', n_points: ' + str(n_points) +
                                       ', uniform_option: ' + str(uniform_option) + '.')
-                        lbp_features.append(MyLocalBinaryPattern.local_binary_pattern(img, n_points, radius))
+                        lbp_features.append(
+                            ScikitLocalBinaryPattern.local_binary_pattern(img, n_points, radius, uniform_option))
                         image_names.append(image_name)
 
                     # Calculate the similarity matrix
@@ -109,7 +84,26 @@ class LocalBinaryPattern(object):
                     most_similar_image = LocalBinaryPattern.find_most_similar_image(similarity_matrix, image_names)
 
                     # Print the results
-                    for i, similar_image_index in enumerate(most_similar_image):
-                        print(f"{image_names[i]} is most similar to {image_names[similar_image_index]}")
+                    # for i, similar_image_index in enumerate(most_similar_image):
+                    #     logging.debug(f"{image_names[i]} is most similar to {image_names[similar_image_index]}")
 
-        logging.debug('Finished calculating LBP for all images.')
+                    correct_recognitions = 0
+                    all_recognitions = 0
+                    for i, similar_image_index in enumerate(most_similar_image):
+                        query = image_names[i]
+                        match = image_names[similar_image_index]
+                        logging.debug(f"{query} is most similar to {match}")
+                        all_recognitions += 1
+                        if identities[query] == identities[match]:
+                            correct_recognitions += 1
+
+                    accuracy = correct_recognitions / all_recognitions
+                    if accuracy > best_accuracy:
+                        best_accuracy = accuracy
+                        best_parameters = (radius, n_points, uniform_option)
+                        logging.info('New best accuracy: ' + str(best_accuracy) + ' with parameters: '
+                                     + str(best_parameters))
+
+        logging.debug('Finished training LBP.')
+        logging.info('Best accuracy: ' + str(best_accuracy) + ' with parameters: ' + str(best_parameters))
+        return best_parameters
