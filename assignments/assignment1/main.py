@@ -2,7 +2,7 @@ import logging
 
 import coloredlogs
 
-from recognition.local_binary_pattern import LocalBinaryPattern
+from recognition.pixel import PixelToPixel
 from utils.data_loader import FileManager
 
 if __name__ == '__main__':
@@ -21,6 +21,7 @@ if __name__ == '__main__':
     #                         grounds_truths=normalized_ground_truths,
     #                         save_directory=output_path)
 
-    LocalBinaryPattern.train_local_binary_pattern(data_path=output_path + 'ground_truths/', identities=identities)
+    # LocalBinaryPattern.train_local_binary_pattern(data_path=output_path + 'ground_truths/', identities=identities)
+    PixelToPixel.test(data_path=output_path + 'ground_truths/', identities=identities)
 
     logging.info('Finished')
