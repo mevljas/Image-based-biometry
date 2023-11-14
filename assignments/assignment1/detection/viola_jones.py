@@ -241,13 +241,18 @@ class ViolaJones(object):
         best_parameters = None
         best_detections = None
 
-        for scale_factor in np.arange(1.01, 1.1, 0.1):
+        # New best IOU: 0.4829996133798827 with parameters: (1.01, 2, 20, 700)
+        # New best IOU: 0.48652077174323793 with parameters: (1.01, 3, 20, 525)
+        # New best IOU: 0.49088017522079186 with parameters: (1.01, 3, 20, 575)
+        # New best IOU: 0.4928115018246467 with parameters: (1.01, 3, 20, 650)
+
+        for scale_factor in np.arange(1.01, 1.05, 0.01):
             logging.debug('Trying scale factor: ' + str(scale_factor))
-            for min_neighbors in range(5, 6, 1):
+            for min_neighbors in range(1, 8, 1):
                 logging.debug('Trying min neighbors: ' + str(min_neighbors))
-                for min_size in range(30, 31, 10):
+                for min_size in range(20, 50, 5):
                     logging.debug('Trying min size: ' + str(min_size))
-                    for max_size in range(800, 801, 50):
+                    for max_size in range(450, 800, 25):
                         logging.debug('Trying parameters: scale_factor: '
                                       + str(scale_factor) + ', min_neighbors: '
                                       + str(min_neighbors) + ', min_size: '
