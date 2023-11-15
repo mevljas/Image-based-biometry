@@ -239,9 +239,9 @@ class ViolaJones(object):
         return average_iou
 
     @staticmethod
-    def train_viola_jones(filenames: [str], data_path: str, ground_truths: {str}) -> (
+    def train(filenames: [str], data_path: str, ground_truths: {str}) -> (
             float, (float, int, int, int),
-            dict[str, list[tuple[int, int, int, int, int, int]], {str}]
+            dict[str, [(int, int, int, int, int, int)]], dict[str, [(int, int, int, int, int, int)]]
     ):
         """
         Trains the Viola-Jones model with different parameters and find parameters with the highest average iou.
@@ -254,16 +254,15 @@ class ViolaJones(object):
         best_ioi = 0
         best_parameters = None
         best_detections = None
-        image_sizes = None
         normalized_ground_truths = None
 
         # Best IOU: 0.6203373833025122 with parameters: (1.01, 3, 20, 650)
 
         for scale_factor in np.arange(1.01, 1.2, 0.01):
             logging.debug('Trying scale factor: ' + str(scale_factor))
-            for min_neighbors in range(3, 6, 1):
+            for min_neighbors in range(3, 4, 1):
                 logging.debug('Trying min neighbors: ' + str(min_neighbors))
-                for min_size in range(20, 31, 5):
+                for min_size in range(10, 30, 1):
                     logging.debug('Trying min size: ' + str(min_size))
                     for max_size in range(500, 700, 50):
                         logging.debug('Trying parameters: scale_factor: '
@@ -294,3 +293,45 @@ class ViolaJones(object):
         logging.info('Best IOU: ' + str(best_ioi) + ' with parameters: ' + str(best_parameters))
 
         return best_ioi, best_parameters, best_detections, normalized_ground_truths
+
+    @staticmethod
+    def test(filenames: [str],
+             data_path: str,
+             ground_truths: {str},
+             scale_factor: float,
+             min_neighbors: int,
+             min_size: int,
+             max_size: int) -> (
+            float,
+            dict[str, [(int, int, int, int, int, int)]], dict[str, [(int, int, int, int, int, int)]]
+    ):
+        """
+        Test the Viola-Jones model with the provided parameters and find calculates average iou.
+        :param filenames: file paths of the images and identities.
+        :param data_path: base path for cascade files.
+        :param ground_truths: ground truths for all images.
+        :return: Calculated iou and dictionary of detections.
+        """
+
+        logging.debug('Testing with parameters: scale_factor: '
+                      + str(scale_factor) + ', min_neighbors: '
+                      + str(min_neighbors) + ', min_size: '
+                      + str(min_size) + ', max_size: '
+                      + str(max_size))
+
+        detections, image_sizes = ViolaJones.detect_ears(filenames=filenames,
+                                                         base_path=data_path,
+                                                         scale_factor=scale_factor,
+                                                         min_neighbours=min_neighbors,
+                                                         min_size=min_size,
+                                                         max_size=max_size)
+
+        normalized_ground_truths = ViolaJones.normalise_ground_truths(ground_truths=ground_truths,
+                                                                      image_sizes=image_sizes)
+
+        iou = ViolaJones.calculate_iou_avg(predictions=detections,
+                                           ground_truths=normalized_ground_truths)
+
+        logging.info('IOU: ' + str(iou))
+
+        return iou, detections, normalized_ground_truths

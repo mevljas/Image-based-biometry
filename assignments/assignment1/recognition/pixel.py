@@ -32,7 +32,7 @@ class PixelToPixel(object):
     @staticmethod
     def test(data_path: str, identities: dict) -> (int, int, int):
         """
-        Trains the local_binary_pattern model with different parameters and find parameters with the highest accuracy.
+        Test the pixel to pixel model and returns accuracy.
         :param identities: dictionary of filenames and their identities.
         :param data_path: base path for cascade files.
         :return:
@@ -62,10 +62,6 @@ class PixelToPixel(object):
         # Find the most similar image for each image
         most_similar_image = PixelToPixel.find_most_similar_image(similarity_matrix, image_names)
 
-        # Print the results
-        # for i, similar_image_index in enumerate(most_similar_image):
-        #     logging.debug(f"{image_names[i]} is most similar to {image_names[similar_image_index]}")
-
         correct_recognitions = 0
         all_recognitions = 0
         for i, similar_image_index in enumerate(most_similar_image):
@@ -79,6 +75,6 @@ class PixelToPixel(object):
         accuracy = correct_recognitions / all_recognitions
 
         logging.debug('Finished calculating P2P.')
-        logging.info('Accuracy: ' + str(accuracy))
+        logging.info('P2P accuracy: ' + str(accuracy))
 
         return accuracy
