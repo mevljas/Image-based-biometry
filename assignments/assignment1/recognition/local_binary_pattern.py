@@ -43,7 +43,7 @@ class LocalBinaryPattern(object):
         return most_similar_image
 
     @staticmethod
-    def calculate_accuracy(image_names: list, most_similar_image, identities: dict):
+    def calculate_accuracy(image_names: list, most_similar_image, filenames: dict):
         correct_recognitions = 0
         all_recognitions = 0
         for i, similar_image_index in enumerate(most_similar_image):
@@ -51,7 +51,7 @@ class LocalBinaryPattern(object):
             match = image_names[similar_image_index]
             logging.debug(f"{query} is most similar to {match}")
             all_recognitions += 1
-            if identities[query] == identities[match]:
+            if filenames[query] == filenames[match]:
                 correct_recognitions += 1
 
         if correct_recognitions == 0:
@@ -61,12 +61,12 @@ class LocalBinaryPattern(object):
         return accuracy
 
     @staticmethod
-    def train_local_binary_pattern(data_path: str, identities: dict, use_scikit: bool) -> (int, int, int):
+    def train_local_binary_pattern(data_path: str, filenames: dict, use_scikit: bool) -> (int, int, int):
         """
         Trains the local binary pattern model with different parameters and
         find parameters with the highest accuracy.
         :param use_scikit: whether to use scikit or custom implementation.
-        :param identities: dictionary of filenames and their identities.
+        :param filenames: dictionary of filenames and their identities.
         :param data_path: base path for cascade files.
         :return:
         """
@@ -113,7 +113,7 @@ class LocalBinaryPattern(object):
 
                     accuracy = LocalBinaryPattern.calculate_accuracy(image_names=image_names,
                                                                      most_similar_image=most_similar_image,
-                                                                     identities=identities)
+                                                                     filenames=filenames)
                     if accuracy > best_accuracy:
                         best_accuracy = accuracy
                         best_parameters = (radius, n_points, uniform_option)
@@ -125,12 +125,12 @@ class LocalBinaryPattern(object):
         return best_accuracy, best_parameters
 
     @staticmethod
-    def test_local_binary_pattern(data_path: str, identities: dict, use_scikit: bool,
+    def test_local_binary_pattern(data_path: str, filenames: dict, use_scikit: bool,
                                   radius: int, n_points: int, uniform_option: bool) -> (int, int, int):
         """
         Test the local binary pattern model with the provided parameters.
         :param use_scikit: whether to use scikit or custom implementation.
-        :param identities: dictionary of filenames and their identities.
+        :param filenames: dictionary of filenames and their identities.
         :param data_path: base path for cascade files.
         :return:
         """
@@ -171,7 +171,7 @@ class LocalBinaryPattern(object):
 
         accuracy = LocalBinaryPattern.calculate_accuracy(image_names=image_names,
                                                          most_similar_image=most_similar_image,
-                                                         identities=identities)
+                                                         filenames=filenames)
         parameters = (radius, n_points, uniform_option)
 
         logging.debug('Finished testing LBP.')

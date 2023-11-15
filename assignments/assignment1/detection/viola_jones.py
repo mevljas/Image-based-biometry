@@ -233,7 +233,10 @@ class ViolaJones(object):
 
                 total_iou += best_iou
 
-        average_iou = total_iou / gt_box_count
+        if total_iou > 0:
+            average_iou = total_iou / gt_box_count
+        else:
+            average_iou = 0
 
         logging.debug('Calculated IOU avg: ' + str(average_iou) + '.')
 
@@ -261,11 +264,11 @@ class ViolaJones(object):
 
         for scale_factor in np.arange(1.01, 1.2, 0.01):
             logging.debug('Trying scale factor: ' + str(scale_factor))
-            for min_neighbors in range(3, 4, 1):
+            for min_neighbors in range(3, 5, 1):
                 logging.debug('Trying min neighbors: ' + str(min_neighbors))
-                for min_size in range(10, 30, 1):
+                for min_size in range(10, 30, 2):
                     logging.debug('Trying min size: ' + str(min_size))
-                    for max_size in range(500, 700, 50):
+                    for max_size in range(500, 800, 25):
                         logging.debug('Trying parameters: scale_factor: '
                                       + str(scale_factor) + ', min_neighbors: '
                                       + str(min_neighbors) + ', min_size: '
@@ -290,7 +293,7 @@ class ViolaJones(object):
                             best_ioi = avg_ioi
                             best_detections = detections
                             best_parameters = (scale_factor, min_neighbors, min_size, max_size)
-                            logging.debug(
+                            logging.info(
                                 'New best IOU: ' + str(best_ioi) + ' with parameters: ' + str(best_parameters))
 
         logging.debug('Best IOU: ' + str(best_ioi) + ' with parameters: ' + str(best_parameters))

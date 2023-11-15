@@ -6,7 +6,7 @@ import cv2
 
 class FileManager(object):
     @staticmethod
-    def load_identities(base_path: str) -> ([str], dict[str]):
+    def load_identities(base_path: str) -> (dict[[str]], dict[str]):
         """
         Reads the filenames and identities from the given identities.txt file on base_path.
         :param base_path: path to the directory which holds identities.txt file.
@@ -20,12 +20,16 @@ class FileManager(object):
         logging.debug('Found ' + str(len(lines)) + ' ear filenames.')
 
         identities = dict()
-        filenames = []
+        filenames = dict()
         for line in lines:
-            filename, identity = line.split(" ")
+            filename, identity = line.strip().split(" ")
             short_filename = filename.split(".png")[0]
-            filenames.append(short_filename)
-            identities[short_filename] = identity
+
+            filenames[short_filename] = identity
+            if identity in identities:
+                identities[identity].append(short_filename)
+            else:
+                identities[identity] = [short_filename]
 
         return filenames, identities
 
@@ -63,8 +67,8 @@ class FileManager(object):
         """
         logging.debug('Preparing data from: ' + data_path)
         filenames, identities = FileManager.load_identities(base_path=data_path)
-        train_set, test_set = FileManager.split_data_set(filenames=filenames, train_ratio=train_ratio)
-        ground_truths = FileManager.load_ground_truths(filenames=filenames)
+        train_set, test_set = FileManager.split_data_set(identities=identities, train_ratio=train_ratio)
+        ground_truths = FileManager.load_ground_truths(filenames=filenames.keys())
         train_ground_truths, test_ground_truths = FileManager.split_ground_truths(ground_truths=ground_truths,
                                                                                   train_set=train_set)
         logging.debug('Prepared data.')
@@ -92,20 +96,26 @@ class FileManager(object):
         return train_ground_truths, test_ground_truths
 
     @staticmethod
-    def split_data_set(filenames: [str], train_ratio: float):
+    def split_data_set(identities: dict[str], train_ratio: float):
         """
         Splits the given cascade file paths into train and test sets.
-        :param filenames: a list of cascade file paths.
+        :param identities: a dictionary of identifies and their filenames.
         :param train_ratio: percentage of the train set.
         :return: a tuple of train and test sets.
         """
         logging.debug('Splitting data set into train and test sets with ratio: ' + str(train_ratio) + '.')
-        train_size = int(len(filenames) * train_ratio)
 
-        train_set = filenames[0:train_size]
-        test_set = filenames[train_size:]
+        train_set = []
+        test_set = []
 
-        logging.debug('Set sizes: train: ' + str(len(train_set)) + ', test: ' + str(len(test_set)) + '.')
+        for identity, filenames in identities.items():
+            train_size = int(len(filenames) * train_ratio)
+
+            train_set.extend(filenames[0:train_size])
+            test_set.extend(filenames[train_size:])
+
+        logging.debug(
+            'Set sizes: train: ' + str(len(train_set)) + ', test: ' + str(len(test_set)) + '.')
 
         return train_set, test_set
 

@@ -30,10 +30,10 @@ class PixelToPixel(object):
         return most_similar_image
 
     @staticmethod
-    def test(data_path: str, identities: dict) -> (int, int, int):
+    def test(data_path: str, filenames: dict) -> (int, int, int):
         """
         Test the pixel to pixel model and returns accuracy.
-        :param identities: dictionary of filenames and their identities.
+        :param filenames: dictionary of filenames and their identities.
         :param data_path: base path for cascade files.
         :return:
         """
@@ -69,7 +69,7 @@ class PixelToPixel(object):
             match = image_names[similar_image_index]
             logging.debug(f"{query} is most similar to {match}")
             all_recognitions += 1
-            if identities[query] == identities[match]:
+            if filenames[query] == filenames[match]:
                 correct_recognitions += 1
 
         accuracy = correct_recognitions / all_recognitions

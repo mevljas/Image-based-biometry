@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     filenames, train_set, test_set, identities, train_ground_truths, test_ground_truths = FileManager.prepare_data(
         data_path=data_path,
-        train_ratio=0.9)
+        train_ratio=0.7)
 
     if run_type == 'train':
         logging.info('Training VJ...')
@@ -43,7 +43,7 @@ if __name__ == '__main__':
         logging.info('Training LBP with scikit...')
         scikit_lbp_accuracy, scikit_lbp_parameters = LocalBinaryPattern.train_local_binary_pattern(
             data_path=output_path + 'ground_truths/',
-            identities=identities,
+            filenames=filenames,
             use_scikit=True)
         logging.info(f'Trained scikit LBP and got accuracy: {scikit_lbp_accuracy} with parameters: ' + str(
             scikit_lbp_parameters))
@@ -51,7 +51,7 @@ if __name__ == '__main__':
         logging.info('Training custom LBP...')
         my_lbp_best_accuracy, my_lbp_parameters = LocalBinaryPattern.train_local_binary_pattern(
             data_path=output_path + 'ground_truths/',
-            identities=identities,
+            filenames=filenames,
             use_scikit=False)
         logging.info(f'Trained custom LBP and got accuracy: {my_lbp_best_accuracy} with parameters: ' + str(
             my_lbp_parameters))
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         logging.info(f'Testing scikit LBP with parameters: radius: {radius}, n_points: {n_points}.')
         scikit_lbp_accuracy, scikit_lbp_parameters = LocalBinaryPattern.test_local_binary_pattern(
             data_path=output_path + 'ground_truths/',
-            identities=identities,
+            filenames=filenames,
             use_scikit=True,
             radius=radius,
             n_points=n_points,
@@ -96,7 +96,7 @@ if __name__ == '__main__':
         logging.info(f'Testing custom LBP with parameters: radius: {radius}, n_points: {n_points}.')
         my_lbp_best_accuracy, my_lbp_parameters = LocalBinaryPattern.test_local_binary_pattern(
             data_path=output_path + 'ground_truths/',
-            identities=identities,
+            filenames=filenames,
             use_scikit=False,
             radius=radius,
             n_points=n_points,
@@ -104,7 +104,7 @@ if __name__ == '__main__':
         logging.info(f'Testing custom LBP finished with accuracy: {my_lbp_best_accuracy}.')
 
         logging.info('Testing P2P...')
-        P2P_accuracy = PixelToPixel.test(data_path=output_path + 'ground_truths/', identities=identities)
+        P2P_accuracy = PixelToPixel.test(data_path=output_path + 'ground_truths/', filenames=filenames)
         logging.info(f'Testing P2P finished with accuracy: {str(P2P_accuracy)}.')
 
     else:
