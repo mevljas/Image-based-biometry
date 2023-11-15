@@ -75,6 +75,6 @@ class PixelToPixel(object):
         accuracy = correct_recognitions / all_recognitions
 
         logging.debug('Finished calculating P2P.')
-        logging.info('P2P accuracy: ' + str(accuracy))
+        logging.debug('P2P accuracy: ' + str(accuracy))
 
         return accuracy

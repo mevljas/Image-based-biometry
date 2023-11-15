@@ -54,7 +54,7 @@ class FileManager(object):
         return grounds_truths
 
     @staticmethod
-    def prepare_data(data_path: str, train_ratio: float = 0.8) -> tuple[[str], [str], [str], {str}, {list}]:
+    def prepare_data(data_path: str, train_ratio: float = 0.8) -> tuple[[str], [str], [str], {list}, dict, dict]:
         """
         Prepares the data for training and testing.
         :param data_path: path to the directory which holds identities.txt file.
@@ -64,10 +64,32 @@ class FileManager(object):
         logging.debug('Preparing data from: ' + data_path)
         filenames, identities = FileManager.load_identities(base_path=data_path)
         train_set, test_set = FileManager.split_data_set(filenames=filenames, train_ratio=train_ratio)
-        ground_truths = FileManager.load_ground_truths(filenames=train_set)
+        ground_truths = FileManager.load_ground_truths(filenames=filenames)
+        train_ground_truths, test_ground_truths = FileManager.split_ground_truths(ground_truths=ground_truths,
+                                                                                  train_set=train_set)
         logging.debug('Prepared data.')
 
-        return filenames, train_set, test_set, ground_truths, identities
+        return filenames, train_set, test_set, identities, train_ground_truths, test_ground_truths
+
+    @staticmethod
+    def split_ground_truths(ground_truths: dict[str, list[tuple[int, int, int, int]]], train_set: [str]) -> \
+            (dict[str, list[[int, int, int, int]]], dict[str, [(int, int, int, int)]]):
+        """
+        Splits the given ground truths into train and test sets.
+        :param train_set: Set of train set filenames.
+        :param ground_truths: a dictionary of ground truths.
+        :return: a tuple of train and test sets.
+        """
+        logging.debug('Splitting ground truths into train and test sets.')
+        train_ground_truths = dict()
+        test_ground_truths = dict()
+        for filename in ground_truths.keys():
+            if filename in train_set:
+                train_ground_truths[filename] = ground_truths[filename]
+            else:
+                test_ground_truths[filename] = ground_truths[filename]
+
+        return train_ground_truths, test_ground_truths
 
     @staticmethod
     def split_data_set(filenames: [str], train_ratio: float):
@@ -150,4 +172,4 @@ class FileManager(object):
                                            x2=x2, y2=y2)
                     square_counter += 1
 
-        logging.info('Saved images.')
+        logging.debug('Saved images.')

@@ -43,7 +43,7 @@ class LocalBinaryPattern(object):
         return most_similar_image
 
     @staticmethod
-    def calculate_accuracy(image_features: list, image_names: list, most_similar_image, identities: dict):
+    def calculate_accuracy(image_names: list, most_similar_image, identities: dict):
         correct_recognitions = 0
         all_recognitions = 0
         for i, similar_image_index in enumerate(most_similar_image):
@@ -54,7 +54,10 @@ class LocalBinaryPattern(object):
             if identities[query] == identities[match]:
                 correct_recognitions += 1
 
-        accuracy = correct_recognitions / all_recognitions
+        if correct_recognitions == 0:
+            accuracy = 0
+        else:
+            accuracy = correct_recognitions / all_recognitions
         return accuracy
 
     @staticmethod
@@ -78,9 +81,9 @@ class LocalBinaryPattern(object):
         best_accuracy = 0
         best_parameters = (0, 0, 0)
 
-        for radius in [1, 2, 3]:
-            for n_points in [8, 16]:
-                for uniform_option in [True, False]:
+        for radius in [1]:
+            for n_points in [8]:
+                for uniform_option in [True]:
                     image_features = []
                     image_names = []
                     for image_path, image_name in files:
@@ -108,19 +111,18 @@ class LocalBinaryPattern(object):
                     # Find the most similar image
                     most_similar_image = LocalBinaryPattern.find_most_similar_image(similarity_matrix, image_names)
 
-                    accuracy = LocalBinaryPattern.calculate_accuracy(image_features=image_features,
-                                                                     image_names=image_names,
+                    accuracy = LocalBinaryPattern.calculate_accuracy(image_names=image_names,
                                                                      most_similar_image=most_similar_image,
                                                                      identities=identities)
                     if accuracy > best_accuracy:
                         best_accuracy = accuracy
                         best_parameters = (radius, n_points, uniform_option)
-                        logging.info('New best accuracy: ' + str(best_accuracy) +
-                                     ' with parameters: ' + str(best_parameters))
+                        logging.debug('New best accuracy: ' + str(best_accuracy) +
+                                      ' with parameters: ' + str(best_parameters))
 
         logging.debug('Finished training LBP.')
-        logging.info('Best LBP accuracy: ' + str(best_accuracy) + ' with parameters: ' + str(best_parameters))
-        return best_parameters
+        logging.debug('Best LBP accuracy: ' + str(best_accuracy) + ' with parameters: ' + str(best_parameters))
+        return best_accuracy, best_parameters
 
     @staticmethod
     def test_local_binary_pattern(data_path: str, identities: dict, use_scikit: bool,
@@ -139,9 +141,6 @@ class LocalBinaryPattern(object):
         files = [(os.path.join(dirpath, f), f.split('_')[0]) for (dirpath, dirnames, files) in os.walk(data_path) for
                  f in
                  files]
-
-        best_accuracy = 0
-        parameters = (0, 0, 0)
 
         image_features = []
         image_names = []
@@ -170,12 +169,11 @@ class LocalBinaryPattern(object):
         # Find the most similar image
         most_similar_image = LocalBinaryPattern.find_most_similar_image(similarity_matrix, image_names)
 
-        accuracy = LocalBinaryPattern.calculate_accuracy(image_features=image_features,
-                                                         image_names=image_names,
+        accuracy = LocalBinaryPattern.calculate_accuracy(image_names=image_names,
                                                          most_similar_image=most_similar_image,
                                                          identities=identities)
         parameters = (radius, n_points, uniform_option)
 
         logging.debug('Finished testing LBP.')
-        logging.info('LBP accuracy: ' + str(best_accuracy) + ' with parameters: ' + str(parameters))
-        return parameters
+        logging.debug('LBP accuracy: ' + str(accuracy) + ' with parameters: ' + str(parameters))
+        return accuracy, parameters

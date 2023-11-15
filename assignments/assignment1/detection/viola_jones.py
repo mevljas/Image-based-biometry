@@ -55,9 +55,10 @@ class ViolaJones(object):
         return detections, (img.shape[1], img.shape[0])
 
     @staticmethod
-    def normalise_ground_truths(ground_truths: dict, image_sizes: dict):
+    def normalise_ground_truths(ground_truths: dict, image_sizes: dict, filenames: [str]):
         normalized_ground_truths = dict()
-        for filename, gt_boxes in ground_truths.items():
+        for filename in filenames:
+            gt_boxes = ground_truths[filename]
             normalized_gt_boxes = []
             img_width, img_height = image_sizes[filename]
 
@@ -245,7 +246,7 @@ class ViolaJones(object):
     ):
         """
         Trains the Viola-Jones model with different parameters and find parameters with the highest average iou.
-        :param filenames: file paths of the images and identities.
+        :param filenames: file names of the images without an extension.
         :param data_path: base path for cascade files.
         :param ground_truths: ground truths for all images.
         :return:
@@ -280,7 +281,8 @@ class ViolaJones(object):
 
                         if normalized_ground_truths is None:
                             normalized_ground_truths = ViolaJones.normalise_ground_truths(ground_truths=ground_truths,
-                                                                                          image_sizes=image_sizes)
+                                                                                          image_sizes=image_sizes,
+                                                                                          filenames=filenames)
 
                         avg_ioi = ViolaJones.calculate_iou_avg(predictions=detections,
                                                                ground_truths=normalized_ground_truths)
@@ -288,9 +290,10 @@ class ViolaJones(object):
                             best_ioi = avg_ioi
                             best_detections = detections
                             best_parameters = (scale_factor, min_neighbors, min_size, max_size)
-                            logging.info('New best IOU: ' + str(best_ioi) + ' with parameters: ' + str(best_parameters))
+                            logging.debug(
+                                'New best IOU: ' + str(best_ioi) + ' with parameters: ' + str(best_parameters))
 
-        logging.info('Best IOU: ' + str(best_ioi) + ' with parameters: ' + str(best_parameters))
+        logging.debug('Best IOU: ' + str(best_ioi) + ' with parameters: ' + str(best_parameters))
 
         return best_ioi, best_parameters, best_detections, normalized_ground_truths
 
@@ -307,7 +310,7 @@ class ViolaJones(object):
     ):
         """
         Test the Viola-Jones model with the provided parameters and find calculates average iou.
-        :param filenames: file paths of the images and identities.
+        :param filenames: file names of the images without an extension.
         :param data_path: base path for cascade files.
         :param ground_truths: ground truths for all images.
         :return: Calculated iou and dictionary of detections.
@@ -327,11 +330,12 @@ class ViolaJones(object):
                                                          max_size=max_size)
 
         normalized_ground_truths = ViolaJones.normalise_ground_truths(ground_truths=ground_truths,
-                                                                      image_sizes=image_sizes)
+                                                                      image_sizes=image_sizes,
+                                                                      filenames=filenames)
 
         iou = ViolaJones.calculate_iou_avg(predictions=detections,
                                            ground_truths=normalized_ground_truths)
 
-        logging.info('IOU: ' + str(iou))
+        logging.debug('IOU: ' + str(iou))
 
         return iou, detections, normalized_ground_truths
