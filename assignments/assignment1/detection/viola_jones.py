@@ -257,12 +257,9 @@ class ViolaJones(object):
         image_sizes = None
         normalized_ground_truths = None
 
-        # New best IOU: 0.4829996133798827 with parameters: (1.01, 2, 20, 700)
-        # New best IOU: 0.48652077174323793 with parameters: (1.01, 3, 20, 525)
-        # New best IOU: 0.49088017522079186 with parameters: (1.01, 3, 20, 575)
-        # New best IOU: 0.4928115018246467 with parameters: (1.01, 3, 20, 650)
+        # Best IOU: 0.6203373833025122 with parameters: (1.01, 3, 20, 650)
 
-        for scale_factor in np.arange(1.01, 1.2, 0.7):
+        for scale_factor in np.arange(1.01, 1.2, 0.01):
             logging.debug('Trying scale factor: ' + str(scale_factor))
             for min_neighbors in range(3, 6, 1):
                 logging.debug('Trying min neighbors: ' + str(min_neighbors))

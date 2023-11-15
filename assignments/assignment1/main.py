@@ -13,7 +13,7 @@ if __name__ == '__main__':
     output_path = 'output/'
 
     filenames, train_set, test_set, ground_truths, identities = FileManager.prepare_data(data_path=data_path,
-                                                                                         train_ratio=0.01)
+                                                                                         train_ratio=0.7)
     viola_jones_model = ViolaJones.train_viola_jones(filenames=train_set, data_path=data_path,
                                                      ground_truths=ground_truths)
     _, _, detections, normalized_ground_truths = viola_jones_model

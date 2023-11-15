@@ -13,5 +13,4 @@ def convert_center_and_percentage_to_pixel_coordinates(center_percentage_coordin
     return x_pixel, y_pixel, width_pixel, height_pixel
 
 
-
 print(convert_center_and_percentage_to_pixel_coordinates((0.425, 0.5852), 0.1333, 0.2111, 1440, 1440))
