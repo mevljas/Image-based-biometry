@@ -117,8 +117,8 @@ class LocalBinaryPattern(object):
                     if accuracy > best_accuracy:
                         best_accuracy = accuracy
                         best_parameters = (radius, n_points, uniform_option)
-                        logging.debug('New best accuracy: ' + str(best_accuracy) +
-                                      ' with parameters: ' + str(best_parameters))
+                        logging.info('New best accuracy: ' + str(best_accuracy) +
+                                     ' with parameters: ' + str(best_parameters))
 
         logging.debug('Finished training LBP.')
         logging.debug('Best LBP accuracy: ' + str(best_accuracy) + ' with parameters: ' + str(best_parameters))

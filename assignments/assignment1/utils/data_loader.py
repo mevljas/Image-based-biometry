@@ -130,7 +130,6 @@ class FileManager(object):
         :param y: y coordinate of the top left corner of the crop.
         :param x2: x2 coordinate of the bottom right corner of the crop.
         :param y2: y2 coordinate of the bottom right corner of the crop.
-        :return: cropped image.
         """
         logging.debug('Cropping image: ' + image_name + ' to position: ' + str(x) + ', ' + str(y) +
                       ', ' + str(x2) + ', ' + str(y2) + '.')
@@ -138,7 +137,18 @@ class FileManager(object):
         cv2.imwrite(filename=save_directory + image_name, img=cropped_image)
 
     @staticmethod
-    def save_images(detections: dict[str, list[tuple[int, int, int, int, int, int]]],
+    def save_full_image(image, image_name: str, save_directory: str):
+        """
+        Saves the whole given image.
+        :param image_name: name of the image to be cropped.
+        :param save_directory: directory to save the cropped image.
+        :param image: image to be saved.
+        """
+        logging.debug('Saving whole image: ' + image_name + '.')
+        cv2.imwrite(filename=save_directory + image_name, img=image)
+
+    @staticmethod
+    def save_images(detections: dict[str, list[tuple[int, int, int, int]]],
                     grounds_truths: {str},
                     save_directory: str):
         """
@@ -171,8 +181,8 @@ class FileManager(object):
                 square_counter += 1
 
             detection_squares = detections[image_name]
+            square_counter = 0
             if detection_squares is not None:
-                square_counter = 0
                 for detection_square in detection_squares:
                     x, y, x2, y2 = detection_square
                     FileManager.crop_image(image=image,
@@ -181,5 +191,9 @@ class FileManager(object):
                                            x=x, y=y,
                                            x2=x2, y2=y2)
                     square_counter += 1
+            else:
+                FileManager.save_full_image(image=image,
+                                            image_name=image_name + '_' + str(square_counter) + '.png',
+                                            save_directory=detected_path)
 
         logging.debug('Saved images.')

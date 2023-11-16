@@ -33,29 +33,29 @@ if __name__ == '__main__':
         iou, best_parameters, detections, normalized_ground_truths = ViolaJones.train(filenames=train_set,
                                                                                       data_path=data_path,
                                                                                       ground_truths=train_ground_truths)
-        logging.info(f'Trained VJ with best IOU: {str(iou)} and parameters: {str(best_parameters)}')
+        logging.info(f'Trained VJ with best IOU: {str(iou)} and parameters: {str(best_parameters)}.\n')
 
         logging.info('Cropping and saving images...')
         FileManager.save_images(detections=detections,
                                 grounds_truths=normalized_ground_truths,
                                 save_directory=output_path)
-        logging.info('Cropping and saving images done.')
+        logging.info('Cropping and saving images done.\n')
 
-        logging.info('Training LBP with scikit...')
-        scikit_lbp_accuracy, scikit_lbp_parameters = LocalBinaryPattern.train_local_binary_pattern(
-            data_path=output_path + 'ground_truths/',
-            filenames=filenames,
-            use_scikit=True)
-        logging.info(f'Trained scikit LBP and got accuracy: {scikit_lbp_accuracy} with parameters: ' + str(
-            scikit_lbp_parameters))
+        # logging.info('Training LBP with scikit...')
+        # scikit_lbp_accuracy, scikit_lbp_parameters = LocalBinaryPattern.train_local_binary_pattern(
+        #     data_path=output_path + 'detected/',
+        #     filenames=filenames,
+        #     use_scikit=True)
+        # logging.info(f'Trained scikit LBP and got accuracy: {scikit_lbp_accuracy} with parameters: ' + str(
+        #     scikit_lbp_parameters) + '\n.')
 
         logging.info('Training custom LBP...')
         my_lbp_best_accuracy, my_lbp_parameters = LocalBinaryPattern.train_local_binary_pattern(
-            data_path=output_path + 'ground_truths/',
+            data_path=output_path + 'detected/',
             filenames=filenames,
             use_scikit=False)
         logging.info(f'Trained custom LBP and got accuracy: {my_lbp_best_accuracy} with parameters: ' + str(
-            my_lbp_parameters))
+            my_lbp_parameters) + '\n.')
 
     elif run_type == 'test':
         scale_factor = 1.01
@@ -73,12 +73,13 @@ if __name__ == '__main__':
                                                                     min_size=min_size,
                                                                     max_size=max_size)
 
-        logging.info(f'Testing VJ finished with accuracy: {iou}.')
+        logging.info(f'Testing VJ finished with accuracy: {iou}. \n')
+
         logging.info('Cropping and saving images...')
         FileManager.save_images(detections=detections,
                                 grounds_truths=normalized_ground_truths,
                                 save_directory=output_path)
-        logging.info('Cropping and saving images done.')
+        logging.info('Cropping and saving images done.\n')
 
         radius = 1
         n_points = 8
@@ -94,7 +95,7 @@ if __name__ == '__main__':
             radius=radius,
             n_points=n_points,
             uniform_option=uniform_option)
-        logging.info(f'Testing scikit LBP on ground truth images finished with accuracy: {scikit_lbp_accuracy}.')
+        logging.info(f'Testing scikit LBP on ground truth images finished with accuracy: {scikit_lbp_accuracy}. \n')
 
         # Test scikit LBP on VJ images
         logging.info(f'Testing scikit LBP on VJ images with parameters: radius: {radius}, n_points: {n_points}.')
@@ -105,7 +106,7 @@ if __name__ == '__main__':
             radius=radius,
             n_points=n_points,
             uniform_option=uniform_option)
-        logging.info(f'Testing scikit LBP on VJ images finished with accuracy: {scikit_lbp_accuracy}.')
+        logging.info(f'Testing scikit LBP on VJ images finished with accuracy: {scikit_lbp_accuracy}. \n')
 
         # Test custom LBP on ground truths
         logging.info(
@@ -117,7 +118,7 @@ if __name__ == '__main__':
             radius=radius,
             n_points=n_points,
             uniform_option=uniform_option)
-        logging.info(f'Testing custom LBP on ground truth images finished with accuracy: {my_lbp_best_accuracy}.')
+        logging.info(f'Testing custom LBP on ground truth images finished with accuracy: {my_lbp_best_accuracy}. \n')
 
         # Test custom LBP on VJ images
         logging.info(f'Testing custom LBP on VJ images with parameters: radius: {radius}, n_points: {n_points}.')
@@ -128,17 +129,17 @@ if __name__ == '__main__':
             radius=radius,
             n_points=n_points,
             uniform_option=uniform_option)
-        logging.info(f'Testing custom LBP on VJ images finished with accuracy: {my_lbp_best_accuracy}.')
+        logging.info(f'Testing custom LBP on VJ images finished with accuracy: {my_lbp_best_accuracy}. \n')
 
         # Test pixel to pixel on ground truth images
         logging.info('Testing P2P on ground truth images...')
         P2P_accuracy = PixelToPixel.test(data_path=output_path + 'ground_truths/', filenames=filenames)
-        logging.info(f'Testing P2P on ground truth images finished with accuracy: {str(P2P_accuracy)}.')
+        logging.info(f'Testing P2P on ground truth images finished with accuracy: {str(P2P_accuracy)}. \n')
 
         # Test pixel to pixel on VJ images
         logging.info('Testing P2P on VJ images...')
         P2P_accuracy = PixelToPixel.test(data_path=output_path + 'detected/', filenames=filenames)
-        logging.info(f'Testing P2P on VJ images finished with accuracy: {str(P2P_accuracy)}.')
+        logging.info(f'Testing P2P on VJ images finished with accuracy: {str(P2P_accuracy)}. \n')
 
 
     else:
