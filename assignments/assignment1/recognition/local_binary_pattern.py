@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 
-from recognition.my_local_binary_pattern import MyLocalBinaryPattern
+from recognition.custom_local_binary_pattern import CustomLocalBinaryPattern
 from recognition.scikit_local_binary_pattern import ScikitLocalBinaryPattern
 
 
@@ -101,7 +101,7 @@ class LocalBinaryPattern(object):
                         else:
                             # TODO: add support for uniform option or other arguments
                             image_features.append(
-                                MyLocalBinaryPattern.local_binary_pattern(img, n_points, radius))
+                                CustomLocalBinaryPattern.local_binary_pattern(img, n_points, radius))
 
                         image_names.append(image_name)
 
@@ -159,7 +159,7 @@ class LocalBinaryPattern(object):
             else:
                 # TODO: add support for uniform option or other arguments
                 image_features.append(
-                    MyLocalBinaryPattern.local_binary_pattern(img, n_points, radius))
+                    CustomLocalBinaryPattern.local_binary_pattern(img, n_points, radius))
 
             image_names.append(image_name)
 

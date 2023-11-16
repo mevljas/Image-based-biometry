@@ -14,7 +14,7 @@ if __name__ == '__main__':
     logging.info('Program startup.')
     data_path = 'data/'
     output_path = 'output/'
-    train_set_ration = 0.9
+    train_set_ration = 0.1
 
     if len(sys.argv) != 2:
         logging.error('Please provide program run type argument (for example train).')

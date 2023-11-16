@@ -2,10 +2,10 @@ import cv2
 import numpy as np
 
 
-class MyLocalBinaryPattern(object):
+class CustomLocalBinaryPattern(object):
 
     @staticmethod
-    def local_binary_pattern(image, P=8, R=1):
+    def local_binary_pattern(image, P, R):
         # Convert the image to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
