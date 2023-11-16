@@ -14,6 +14,7 @@ if __name__ == '__main__':
     logging.info('Program startup.')
     data_path = 'data/'
     output_path = 'output/'
+    train_set_ration = 0.9
 
     if len(sys.argv) != 2:
         logging.error('Please provide program run type argument (for example train).')
@@ -25,7 +26,7 @@ if __name__ == '__main__':
 
     filenames, train_set, test_set, identities, train_ground_truths, test_ground_truths = FileManager.prepare_data(
         data_path=data_path,
-        train_ratio=0.7)
+        train_ratio=train_set_ration)
 
     if run_type == 'train':
         logging.info('Training VJ...')
@@ -79,33 +80,66 @@ if __name__ == '__main__':
                                 save_directory=output_path)
         logging.info('Cropping and saving images done.')
 
-        radius = 3
-        n_points = 16
+        radius = 1
+        n_points = 8
         uniform_option = True
 
-        logging.info(f'Testing scikit LBP with parameters: radius: {radius}, n_points: {n_points}.')
-        scikit_lbp_accuracy, scikit_lbp_parameters = LocalBinaryPattern.test_local_binary_pattern(
+        # Test scikit LBP on ground truths
+        logging.info(
+            f'Testing scikit LBP on ground truth images with parameters: radius: {radius}, n_points: {n_points}.')
+        scikit_lbp_accuracy = LocalBinaryPattern.test_local_binary_pattern(
             data_path=output_path + 'ground_truths/',
             filenames=filenames,
             use_scikit=True,
             radius=radius,
             n_points=n_points,
             uniform_option=uniform_option)
-        logging.info(f'Testing scikit LBP finished with accuracy: {scikit_lbp_accuracy}.')
+        logging.info(f'Testing scikit LBP on ground truth images finished with accuracy: {scikit_lbp_accuracy}.')
 
-        logging.info(f'Testing custom LBP with parameters: radius: {radius}, n_points: {n_points}.')
-        my_lbp_best_accuracy, my_lbp_parameters = LocalBinaryPattern.test_local_binary_pattern(
+        # Test scikit LBP on VJ images
+        logging.info(f'Testing scikit LBP on VJ images with parameters: radius: {radius}, n_points: {n_points}.')
+        scikit_lbp_accuracy = LocalBinaryPattern.test_local_binary_pattern(
+            data_path=output_path + 'detected/',
+            filenames=filenames,
+            use_scikit=True,
+            radius=radius,
+            n_points=n_points,
+            uniform_option=uniform_option)
+        logging.info(f'Testing scikit LBP on VJ images finished with accuracy: {scikit_lbp_accuracy}.')
+
+        # Test custom LBP on ground truths
+        logging.info(
+            f'Testing custom LBP on ground truth images with parameters: radius: {radius}, n_points: {n_points}.')
+        my_lbp_best_accuracy = LocalBinaryPattern.test_local_binary_pattern(
             data_path=output_path + 'ground_truths/',
             filenames=filenames,
             use_scikit=False,
             radius=radius,
             n_points=n_points,
             uniform_option=uniform_option)
-        logging.info(f'Testing custom LBP finished with accuracy: {my_lbp_best_accuracy}.')
+        logging.info(f'Testing custom LBP on ground truth images finished with accuracy: {my_lbp_best_accuracy}.')
 
-        logging.info('Testing P2P...')
+        # Test custom LBP on VJ images
+        logging.info(f'Testing custom LBP on VJ images with parameters: radius: {radius}, n_points: {n_points}.')
+        my_lbp_best_accuracy = LocalBinaryPattern.test_local_binary_pattern(
+            data_path=output_path + 'detected/',
+            filenames=filenames,
+            use_scikit=False,
+            radius=radius,
+            n_points=n_points,
+            uniform_option=uniform_option)
+        logging.info(f'Testing custom LBP on VJ images finished with accuracy: {my_lbp_best_accuracy}.')
+
+        # Test pixel to pixel on ground truth images
+        logging.info('Testing P2P on ground truth images...')
         P2P_accuracy = PixelToPixel.test(data_path=output_path + 'ground_truths/', filenames=filenames)
-        logging.info(f'Testing P2P finished with accuracy: {str(P2P_accuracy)}.')
+        logging.info(f'Testing P2P on ground truth images finished with accuracy: {str(P2P_accuracy)}.')
+
+        # Test pixel to pixel on VJ images
+        logging.info('Testing P2P on VJ images...')
+        P2P_accuracy = PixelToPixel.test(data_path=output_path + 'detected/', filenames=filenames)
+        logging.info(f'Testing P2P on VJ images finished with accuracy: {str(P2P_accuracy)}.')
+
 
     else:
         logging.error(f'Wrong program argument {run_type}.')

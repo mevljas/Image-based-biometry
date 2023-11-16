@@ -172,8 +172,7 @@ class LocalBinaryPattern(object):
         accuracy = LocalBinaryPattern.calculate_accuracy(image_names=image_names,
                                                          most_similar_image=most_similar_image,
                                                          filenames=filenames)
-        parameters = (radius, n_points, uniform_option)
 
         logging.debug('Finished testing LBP.')
-        logging.debug('LBP accuracy: ' + str(accuracy) + ' with parameters: ' + str(parameters))
-        return accuracy, parameters
+        logging.debug('LBP accuracy: ' + str(accuracy))
+        return accuracy
