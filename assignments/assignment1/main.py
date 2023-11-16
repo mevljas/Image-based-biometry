@@ -14,7 +14,7 @@ if __name__ == '__main__':
     logging.info('Program startup.')
     data_path = 'data/'
     output_path = 'output/'
-    train_set_ration = 0.1
+    train_set_ration = 0.7
 
     if len(sys.argv) != 2:
         logging.error('Please provide program run type argument (for example train).')
@@ -93,8 +93,8 @@ if __name__ == '__main__':
             filenames=filenames,
             use_scikit=True,
             radius=radius,
-            n_points=n_points,
-            uniform_option=uniform_option)
+            neighbor_points=n_points,
+            uniform=uniform_option)
         logging.info(f'Testing scikit LBP on ground truth images finished with accuracy: {scikit_lbp_accuracy}. \n')
 
         # Test scikit LBP on VJ images
@@ -104,8 +104,8 @@ if __name__ == '__main__':
             filenames=filenames,
             use_scikit=True,
             radius=radius,
-            n_points=n_points,
-            uniform_option=uniform_option)
+            neighbor_points=n_points,
+            uniform=uniform_option)
         logging.info(f'Testing scikit LBP on VJ images finished with accuracy: {scikit_lbp_accuracy}. \n')
 
         # Test custom LBP on ground truths
@@ -116,8 +116,8 @@ if __name__ == '__main__':
             filenames=filenames,
             use_scikit=False,
             radius=radius,
-            n_points=n_points,
-            uniform_option=uniform_option)
+            neighbor_points=n_points,
+            uniform=uniform_option)
         logging.info(f'Testing custom LBP on ground truth images finished with accuracy: {my_lbp_best_accuracy}. \n')
 
         # Test custom LBP on VJ images
@@ -127,8 +127,8 @@ if __name__ == '__main__':
             filenames=filenames,
             use_scikit=False,
             radius=radius,
-            n_points=n_points,
-            uniform_option=uniform_option)
+            neighbor_points=n_points,
+            uniform=uniform_option)
         logging.info(f'Testing custom LBP on VJ images finished with accuracy: {my_lbp_best_accuracy}. \n')
 
         # Test pixel to pixel on ground truth images

@@ -81,27 +81,30 @@ class LocalBinaryPattern(object):
         best_accuracy = 0
         best_parameters = (0, 0, 0)
 
+        # for radius in [1, 2, 3]:
         for radius in [1]:
-            for n_points in [8]:
-                for uniform_option in [True]:
+            # for neighbor_points in range(8, 25, 8):
+            for neighbor_points in [8]:
+                # for uniform in [True, False]:
+                for uniform in [True]:
                     image_features = []
                     image_names = []
                     for image_path, image_name in files:
                         logging.debug('Calculating LBP for: ' + image_path +
                                       ' with parameters: radius: ' + str(radius) +
-                                      ', n_points: ' + str(n_points) +
-                                      ', uniform_option: ' + str(uniform_option) + '.')
+                                      ', neighbor points: ' + str(neighbor_points) +
+                                      ', uniform: ' + str(uniform) + '.')
 
                         # Read and resize images to a consistent size
                         img = cv2.resize(cv2.imread(image_path), (128, 128))
 
                         if use_scikit:
                             image_features.append(
-                                ScikitLocalBinaryPattern.local_binary_pattern(img, n_points, radius, uniform_option))
+                                ScikitLocalBinaryPattern.run(img, neighbor_points, radius, uniform))
                         else:
                             # TODO: add support for uniform option or other arguments
                             image_features.append(
-                                CustomLocalBinaryPattern.local_binary_pattern(img, n_points, radius))
+                                CustomLocalBinaryPattern.run(img, neighbor_points, radius))
 
                         image_names.append(image_name)
 
@@ -116,7 +119,7 @@ class LocalBinaryPattern(object):
                                                                      filenames=filenames)
                     if accuracy > best_accuracy:
                         best_accuracy = accuracy
-                        best_parameters = (radius, n_points, uniform_option)
+                        best_parameters = (radius, neighbor_points, uniform)
                         logging.info('New best accuracy: ' + str(best_accuracy) +
                                      ' with parameters: ' + str(best_parameters))
 
@@ -126,7 +129,7 @@ class LocalBinaryPattern(object):
 
     @staticmethod
     def test_local_binary_pattern(data_path: str, filenames: dict, use_scikit: bool,
-                                  radius: int, n_points: int, uniform_option: bool) -> (int, int, int):
+                                  radius: int, neighbor_points: int, uniform: bool) -> (int, int, int):
         """
         Test the local binary pattern model with the provided parameters.
         :param use_scikit: whether to use scikit or custom implementation.
@@ -147,19 +150,18 @@ class LocalBinaryPattern(object):
         for image_path, image_name in files:
             logging.debug('Calculating LBP for: ' + image_path +
                           ' with parameters: radius: ' + str(radius) +
-                          ', n_points: ' + str(n_points) +
-                          ', uniform_option: ' + str(uniform_option) + '.')
+                          ', neighbor points: ' + str(neighbor_points) +
+                          ', uniform: ' + str(uniform) + '.')
 
             # Read and resize images to a consistent size
             img = cv2.resize(cv2.imread(image_path), (128, 128))
 
             if use_scikit:
                 image_features.append(
-                    ScikitLocalBinaryPattern.local_binary_pattern(img, n_points, radius, uniform_option))
+                    ScikitLocalBinaryPattern.run(img, neighbor_points, radius, uniform))
             else:
-                # TODO: add support for uniform option or other arguments
                 image_features.append(
-                    CustomLocalBinaryPattern.local_binary_pattern(img, n_points, radius))
+                    CustomLocalBinaryPattern.run(img, radius, neighbor_points, uniform))
 
             image_names.append(image_name)
 

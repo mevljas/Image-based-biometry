@@ -1,26 +1,47 @@
-import cv2
 import numpy as np
 
 
 class CustomLocalBinaryPattern(object):
 
     @staticmethod
-    def local_binary_pattern(image, P, R):
-        # Convert the image to grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    def generate_uniform_patterns():
+        patterns = [0] * 256
+        for i in range(256):
+            binary = bin(i)[2:].zfill(8)
+            transitions = sum((int(binary[j]) != int(binary[(j + 1) % 8])) for j in range(8))
+            if transitions <= 2:
+                patterns[i] = True
+        return patterns
 
-        # Initialize the LBP feature vector
-        lbp_vector = np.zeros((gray.shape[0] - 2 * R, gray.shape[1] - 2 * R), dtype=np.uint8)
+    @staticmethod
+    def compute_lbp_pixel(img, center, x, y, radius, num_neighbors):
+        pattern = 0
+        values = []
+        for i in range(num_neighbors):
+            nx = x + int(round(radius * np.cos(2.0 * np.pi * i / num_neighbors)))
+            ny = y - int(round(radius * np.sin(2.0 * np.pi * i / num_neighbors)))
 
-        # Calculate LBP for each pixel
-        for i in range(R, gray.shape[0] - R):
-            for j in range(R, gray.shape[1] - R):
-                center = gray[i, j]
-                binary_code = 0
-                for k in range(P):
-                    x = int(np.round(i + R * np.cos(2 * np.pi * k / P)))
-                    y = int(np.round(j - R * np.sin(2 * np.pi * k / P)))
-                    binary_code |= (gray[x, y] >= center) << k
-                lbp_vector[i - R, j - R] = binary_code
+            if nx >= 0 and ny >= 0 and nx < img.shape[1] and ny < img.shape[0]:
+                values.append(img[ny, nx])
 
-        return lbp_vector.flatten()
+            if np.any(img[ny, nx] >= center):
+                pattern |= (1 << i)
+
+        return pattern, values
+
+    @staticmethod
+    def run(img, radius, neighbors_points, use_uniform=True):
+        patterns = CustomLocalBinaryPattern.generate_uniform_patterns() if use_uniform else None
+        lbp_img = np.zeros_like(img, dtype=np.uint8)
+
+        for y in range(radius, img.shape[0] - radius):
+            for x in range(radius, img.shape[1] - radius):
+                center = img[y, x]
+                pattern, _ = CustomLocalBinaryPattern.compute_lbp_pixel(img, center, x, y, radius, neighbors_points)
+
+                if use_uniform:
+                    pattern = patterns[pattern]
+
+                lbp_img[y, x] = pattern
+
+        return lbp_img.flatten()
