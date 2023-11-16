@@ -98,7 +98,7 @@ class FileManager(object):
     @staticmethod
     def split_data_set(identities: dict[str], train_ratio: float):
         """
-        Splits the given cascade file paths into train and test sets.
+        Splits the files of each identity into train and test sets.
         :param identities: a dictionary of identifies and their filenames.
         :param train_ratio: percentage of the train set.
         :return: a tuple of train and test sets.
