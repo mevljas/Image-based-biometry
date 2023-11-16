@@ -163,6 +163,9 @@ class LocalBinaryPattern(object):
                 image_features.append(
                     CustomLocalBinaryPattern.run(img, radius, neighbor_points, uniform))
 
+            # TODO: histogram
+            # hist, _ = np.histogram(lbp_result, bins=256, range=(0, 256))
+
             image_names.append(image_name)
 
         # Calculate the similarity matrix
