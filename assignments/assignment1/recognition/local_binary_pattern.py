@@ -81,12 +81,12 @@ class LocalBinaryPattern(object):
         best_accuracy = 0
         best_parameters = (0, 0, 0)
 
-        # for radius in [1, 2, 3]:
-        for radius in [1]:
-            # for neighbor_points in range(8, 25, 8):
-            for neighbor_points in [8]:
-                # for uniform in [True, False]:
-                for uniform in [True]:
+        for radius in [1, 2, 3]:
+            # for radius in [1]:
+            for neighbor_points in range(8, 25, 8):
+                # for neighbor_points in [8]:
+                for uniform in [True, False]:
+                    # for uniform in [True]:
                     image_features = []
                     image_names = []
                     for image_path, image_name in files:
@@ -102,9 +102,8 @@ class LocalBinaryPattern(object):
                             image_features.append(
                                 ScikitLocalBinaryPattern.run(img, neighbor_points, radius, uniform))
                         else:
-                            # TODO: add support for uniform option or other arguments
                             image_features.append(
-                                CustomLocalBinaryPattern.run(img, neighbor_points, radius))
+                                CustomLocalBinaryPattern.run(img, radius, neighbor_points, uniform))
 
                         image_names.append(image_name)
 
