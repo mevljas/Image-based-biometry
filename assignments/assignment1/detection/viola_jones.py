@@ -271,7 +271,7 @@ class ViolaJones(object):
                 for min_size in range(20, 40, 5):
                     # for min_size in range(30, 31, 2):
                     logging.debug('Trying min size: ' + str(min_size))
-                    for max_size in range(600, 900, 25):
+                    for max_size in range(600, 900, 50):
                         # for max_size in range(550, 600, 50):
                         logging.debug('Trying parameters: scale_factor: '
                                       + str(scale_factor) + ', min_neighbors: '
