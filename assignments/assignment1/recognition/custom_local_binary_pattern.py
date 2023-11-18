@@ -4,44 +4,50 @@ import numpy as np
 class CustomLocalBinaryPattern(object):
 
     @staticmethod
-    def generate_uniform_patterns():
-        patterns = [0] * 256
-        for i in range(256):
-            binary = bin(i)[2:].zfill(8)
-            transitions = sum((int(binary[j]) != int(binary[(j + 1) % 8])) for j in range(8))
-            if transitions <= 2:
-                patterns[i] = True
-        return patterns
+    def get_pixel_value(image, center, x, y):
+        """Get pixel value at a given position."""
+        try:
+            return 1 if np.any(image[y, x] >= center) else 0
+        except IndexError:
+            return 0
 
     @staticmethod
-    def compute_lbp_pixel(img, center, x, y, radius, num_neighbors):
-        pattern = 0
+    def calculate_lbp_pixel(image, center, x, y, radius, neighbors_points):
+        """Calculate LBP value for a pixel."""
         values = []
-        for i in range(num_neighbors):
-            nx = x + int(round(radius * np.cos(2.0 * np.pi * i / num_neighbors)))
-            ny = y - int(round(radius * np.sin(2.0 * np.pi * i / num_neighbors)))
-
-            if nx >= 0 and ny >= 0 and nx < img.shape[1] and ny < img.shape[0]:
-                values.append(img[ny, nx])
-
-            if np.any(img[ny, nx] >= center):
-                pattern |= (1 << i)
-
-        return pattern, values
+        for i in range(neighbors_points):
+            angle = i * (360 / neighbors_points)
+            dx = round(x + radius * np.cos(np.radians(angle)))
+            dy = round(y - radius * np.sin(np.radians(angle)))
+            values.append(CustomLocalBinaryPattern.get_pixel_value(image, center, dx, dy))
+        return values
 
     @staticmethod
-    def run(img, radius, neighbors_points, use_uniform=True):
-        patterns = CustomLocalBinaryPattern.generate_uniform_patterns() if use_uniform else None
-        lbp_img = np.zeros_like(img, dtype=np.uint8)
+    def is_uniform(lbp_values):
+        """Check if LBP values are uniform."""
+        transitions = sum((lbp_values[i] != lbp_values[(i + 1) % len(lbp_values)]) for i in range(len(lbp_values)))
+        return transitions <= 2
 
-        for y in range(radius, img.shape[0] - radius):
-            for x in range(radius, img.shape[1] - radius):
-                center = img[y, x]
-                pattern, _ = CustomLocalBinaryPattern.compute_lbp_pixel(img, center, x, y, radius, neighbors_points)
+    @staticmethod
+    def local_binary_pattern(image, radius, neighbors_points, use_uniform):
+        """Compute LBP for each pixel in the image."""
+        height, width, _ = image.shape
+        lbp_image = np.zeros((height, width), dtype=np.uint8)
 
-                if use_uniform:
-                    pattern = patterns[pattern]
+        for y in range(radius, height - radius):
+            for x in range(radius, width - radius):
+                center = image[y, x]
+                lbp_values = CustomLocalBinaryPattern.calculate_lbp_pixel(image, center, x, y, radius, neighbors_points)
 
-                lbp_img[y, x] = pattern
+                if use_uniform and not CustomLocalBinaryPattern.is_uniform(lbp_values):
+                    lbp_image[y, x] = 255  # Non-uniform pattern
+                else:
+                    lbp_image[y, x] = sum(value * (2 ** i) for i, value in enumerate(lbp_values))
 
-        return lbp_img.flatten()
+        return lbp_image
+
+    @staticmethod
+    def run(gray_image, radius, neighbors_points, use_uniform):
+        lbp_result = CustomLocalBinaryPattern.local_binary_pattern(gray_image, radius, neighbors_points, use_uniform)
+
+        return lbp_result.flatten()

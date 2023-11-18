@@ -153,7 +153,7 @@ class LocalBinaryPattern(object):
                           ', uniform: ' + str(uniform) + '.')
 
             # Read and resize images to a consistent size
-            img = cv2.resize(cv2.imread(image_path), (128, 128))
+            img = cv2.resize(cv2.imread(image_path, cv2.IMREAD_GRAYSCALE), (128, 128))
 
             if use_scikit:
                 image_features.append(
