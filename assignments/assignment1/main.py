@@ -50,11 +50,11 @@ if __name__ == '__main__':
         #     scikit_lbp_parameters) + '\n.')
 
         logging.info('Training custom LBP...')
-        my_lbp_best_accuracy, my_lbp_parameters = LocalBinaryPattern.train_local_binary_pattern(
+        custom_lbp_best_accuracy, my_lbp_parameters = LocalBinaryPattern.train_local_binary_pattern(
             data_path=output_path + 'detected/',
             filenames=filenames,
             use_scikit=False)
-        logging.info(f'Trained custom LBP and got accuracy: {my_lbp_best_accuracy} with parameters: ' + str(
+        logging.info(f'Trained custom LBP and got accuracy: {custom_lbp_best_accuracy} with parameters: ' + str(
             my_lbp_parameters) + '\n.')
 
     elif run_type == 'test':
@@ -83,53 +83,68 @@ if __name__ == '__main__':
 
         radius = 1
         n_points = 8
-        uniform_option = True
+        uniform = True
 
         # Test scikit LBP on ground truths
         logging.info(
             f'Testing scikit LBP on ground truth images with parameters: radius: {radius}, n_points: {n_points}.')
-        scikit_lbp_accuracy = LocalBinaryPattern.test_local_binary_pattern(
+        scikit_lbp_accuracy, scikit_lbp_histograms, scikit_lbp_files = LocalBinaryPattern.test_local_binary_pattern(
             data_path=output_path + 'ground_truths/',
             filenames=filenames,
             use_scikit=True,
             radius=radius,
             neighbor_points=n_points,
-            uniform=uniform_option)
+            uniform=uniform)
         logging.info(f'Testing scikit LBP on ground truth images finished with accuracy: {scikit_lbp_accuracy}. \n')
 
         # Test scikit LBP on VJ images
-        logging.info(f'Testing scikit LBP on VJ images with parameters: radius: {radius}, n_points: {n_points}.')
-        scikit_lbp_accuracy = LocalBinaryPattern.test_local_binary_pattern(
+        logging.info(f'Testing scikit LBP on VJ images with parameters: radius: {radius}, n_points: {n_points} and: '
+                     f'uniform {uniform}.')
+        scikit_lbp_accuracy, _, _ = LocalBinaryPattern.test_local_binary_pattern(
             data_path=output_path + 'detected/',
             filenames=filenames,
             use_scikit=True,
             radius=radius,
             neighbor_points=n_points,
-            uniform=uniform_option)
+            uniform=uniform)
         logging.info(f'Testing scikit LBP on VJ images finished with accuracy: {scikit_lbp_accuracy}. \n')
 
         # Test custom LBP on ground truths
         logging.info(
-            f'Testing custom LBP on ground truth images with parameters: radius: {radius}, n_points: {n_points}.')
-        my_lbp_best_accuracy = LocalBinaryPattern.test_local_binary_pattern(
+            f'Testing custom LBP on ground truth images with parameters: radius: {radius}, n_points: {n_points} and: '
+            f'uniform {uniform}.')
+        custom_lbp_best_accuracy, custom_lbp_histograms, custom_lbp_files = LocalBinaryPattern.test_local_binary_pattern(
             data_path=output_path + 'ground_truths/',
             filenames=filenames,
             use_scikit=False,
             radius=radius,
             neighbor_points=n_points,
-            uniform=uniform_option)
-        logging.info(f'Testing custom LBP on ground truth images finished with accuracy: {my_lbp_best_accuracy}. \n')
+            uniform=uniform)
+        logging.info(
+            f'Testing custom LBP on ground truth images finished with accuracy: {custom_lbp_best_accuracy}. \n')
+
+        logging.info(f'Saving custom ground truth LBP histograms...')
+        FileManager.save_lbp_histograms(histograms=custom_lbp_histograms,
+                                        files=custom_lbp_files,
+                                        directory_path=output_path + 'histograms/ground_truths/')
+        logging.info(f'Saving custom ground truth LBP histograms done.\n')
 
         # Test custom LBP on VJ images
         logging.info(f'Testing custom LBP on VJ images with parameters: radius: {radius}, n_points: {n_points}.')
-        my_lbp_best_accuracy = LocalBinaryPattern.test_local_binary_pattern(
+        custom_lbp_best_accuracy, custom_lbp_histograms, custom_lbp_files = LocalBinaryPattern.test_local_binary_pattern(
             data_path=output_path + 'detected/',
             filenames=filenames,
             use_scikit=False,
             radius=radius,
             neighbor_points=n_points,
-            uniform=uniform_option)
-        logging.info(f'Testing custom LBP on VJ images finished with accuracy: {my_lbp_best_accuracy}. \n')
+            uniform=uniform)
+        logging.info(f'Testing custom LBP on VJ images finished with accuracy: {custom_lbp_best_accuracy}. \n')
+
+        logging.info(f'Saving custom VJ LBP histograms...')
+        FileManager.save_lbp_histograms(histograms=custom_lbp_histograms,
+                                        files=custom_lbp_files,
+                                        directory_path=output_path + 'histograms/vj/')
+        logging.info(f'Saving custom VJ LBP histograms done.\n')
 
         # Test pixel to pixel on ground truth images
         logging.info('Testing P2P on ground truth images...')
@@ -140,7 +155,6 @@ if __name__ == '__main__':
         logging.info('Testing P2P on VJ images...')
         P2P_accuracy = PixelToPixel.test(data_path=output_path + 'detected/', filenames=filenames)
         logging.info(f'Testing P2P on VJ images finished with accuracy: {str(P2P_accuracy)}. \n')
-
 
     else:
         logging.error(f'Wrong program argument {run_type}.')

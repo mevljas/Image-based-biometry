@@ -31,10 +31,7 @@ class CustomLocalBinaryPattern(object):
     @staticmethod
     def local_binary_pattern(image, radius, neighbors_points, use_uniform):
         """Compute LBP for each pixel in the image."""
-        if len(image.shape) == 3:
-            height, width, _ = image.shape
-        else:
-            height, width = image.shape
+        height, width = image.shape
         lbp_image = np.zeros((height, width), dtype=np.uint8)
 
         for y in range(radius, height - radius):

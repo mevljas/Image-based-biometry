@@ -2,6 +2,8 @@ import logging
 import os
 
 import cv2
+import numpy as np
+from matplotlib import pyplot as plt
 
 
 class FileManager(object):
@@ -197,3 +199,21 @@ class FileManager(object):
                                             save_directory=detected_path)
 
         logging.debug('Saved images.')
+
+    @staticmethod
+    def save_lbp_histograms(directory_path: str, histograms, files: str):
+        # Create the directory if it doesn't exist
+        if not os.path.exists(directory_path):
+            os.makedirs(directory_path)
+
+        for file, lbp_image in zip(files, histograms):
+            _, name, filename = file
+
+            histogram, _ = np.histogram(lbp_image, bins=256, range=(0, 256))
+
+            plt.bar(range(len(histogram)), histogram)
+            plt.title(f'LBP Histogram - Image {name}')
+            plt.xlabel('Bin')
+            plt.ylabel('Frequency')
+            plt.savefig(os.path.join(directory_path, f'{filename}.png'))
+            plt.close()

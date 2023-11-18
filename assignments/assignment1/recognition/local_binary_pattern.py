@@ -3,7 +3,6 @@ import os
 
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 
 from recognition.custom_local_binary_pattern import CustomLocalBinaryPattern
@@ -11,12 +10,6 @@ from recognition.scikit_local_binary_pattern import ScikitLocalBinaryPattern
 
 
 class LocalBinaryPattern(object):
-    @staticmethod
-    def draw_histogram(lbp_image, title):
-        hist, _ = np.histogram(lbp_image, bins=np.arange(0, 256), range=(0, 256))
-        plt.bar(np.arange(0, 256), hist, width=1.0, color='gray')
-        plt.title(title)
-        plt.show()
 
     @staticmethod
     def calculate_similarity_matrix(images: list):
@@ -31,7 +24,7 @@ class LocalBinaryPattern(object):
         return similarity_matrix
 
     @staticmethod
-    def find_most_similar_image(similarity_matrix, image_names):
+    def find_most_similar_image(similarity_matrix):
         num_images = similarity_matrix.shape[0]
         most_similar_image = np.zeros(num_images, dtype=int)
 
@@ -96,7 +89,7 @@ class LocalBinaryPattern(object):
                                       ', uniform: ' + str(uniform) + '.')
 
                         # Read and resize images to a consistent size
-                        img = cv2.resize(cv2.imread(image_path), (128, 128))
+                        img = cv2.resize(cv2.imread(image_path, cv2.IMREAD_GRAYSCALE), (128, 128))
 
                         if use_scikit:
                             image_features.append(
@@ -111,7 +104,7 @@ class LocalBinaryPattern(object):
                     similarity_matrix = LocalBinaryPattern.calculate_similarity_matrix(image_features)
 
                     # Find the most similar image
-                    most_similar_image = LocalBinaryPattern.find_most_similar_image(similarity_matrix, image_names)
+                    most_similar_image = LocalBinaryPattern.find_most_similar_image(similarity_matrix)
 
                     accuracy = LocalBinaryPattern.calculate_accuracy(image_names=image_names,
                                                                      most_similar_image=most_similar_image,
@@ -140,13 +133,13 @@ class LocalBinaryPattern(object):
         logging.debug(f'Training LBP with scikit: {use_scikit}.')
 
         # Find all files in the given directory
-        files = [(os.path.join(dirpath, f), f.split('_')[0]) for (dirpath, dirnames, files) in os.walk(data_path) for
+        files = [(os.path.join(dirpath, f), f.split('_')[0], f) for (dirpath, dirnames, files) in os.walk(data_path) for
                  f in
                  files]
 
         image_features = []
         image_names = []
-        for image_path, image_name in files:
+        for image_path, image_name, _ in files:
             logging.debug('Calculating LBP for: ' + image_path +
                           ' with parameters: radius: ' + str(radius) +
                           ', neighbor points: ' + str(neighbor_points) +
@@ -162,16 +155,13 @@ class LocalBinaryPattern(object):
                 image_features.append(
                     CustomLocalBinaryPattern.run(img, radius, neighbor_points, uniform))
 
-            # TODO: histogram
-            # hist, _ = np.histogram(lbp_result, bins=256, range=(0, 256))
-
             image_names.append(image_name)
 
         # Calculate the similarity matrix
         similarity_matrix = LocalBinaryPattern.calculate_similarity_matrix(image_features)
 
         # Find the most similar image
-        most_similar_image = LocalBinaryPattern.find_most_similar_image(similarity_matrix, image_names)
+        most_similar_image = LocalBinaryPattern.find_most_similar_image(similarity_matrix)
 
         accuracy = LocalBinaryPattern.calculate_accuracy(image_names=image_names,
                                                          most_similar_image=most_similar_image,
@@ -179,4 +169,4 @@ class LocalBinaryPattern(object):
 
         logging.debug('Finished testing LBP.')
         logging.debug('LBP accuracy: ' + str(accuracy))
-        return accuracy
+        return accuracy, image_features, files
