@@ -260,16 +260,18 @@ class ViolaJones(object):
         best_detections = None
         normalized_ground_truths = None
 
-        for scale_factor in np.arange(1.01, 1.1, 0.01):
+        # New best IOU: 0.6436800056137328 with parameters: (1.01, 3, 20, 750)
+
+        for scale_factor in np.arange(1.01, 1.05, 0.01):
             # for scale_factor in np.arange(1.01, 1.1, 0.1):
             logging.debug('Trying scale factor: ' + str(scale_factor))
             for min_neighbors in range(3, 6, 1):
                 # for min_neighbors in range(3, 4, 1):
                 logging.debug('Trying min neighbors: ' + str(min_neighbors))
-                for min_size in range(20, 40, 1):
+                for min_size in range(20, 40, 5):
                     # for min_size in range(30, 31, 2):
                     logging.debug('Trying min size: ' + str(min_size))
-                    for max_size in range(500, 800, 20):
+                    for max_size in range(600, 900, 25):
                         # for max_size in range(550, 600, 50):
                         logging.debug('Trying parameters: scale_factor: '
                                       + str(scale_factor) + ', min_neighbors: '
