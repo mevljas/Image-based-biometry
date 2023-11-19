@@ -60,8 +60,8 @@ if __name__ == '__main__':
     elif run_type == 'test':
         scale_factor = 1.01
         min_neighbors = 3
-        min_size = 30
-        max_size = 550
+        min_size = 20
+        max_size = 750
         logging.info(f'Testing VJ with parameters: scale_factor: {scale_factor}, min_neighbors: {min_neighbors}, '
                      f'min_size: {min_size}, max_size: {max_size}.')
 
@@ -81,9 +81,9 @@ if __name__ == '__main__':
                                 save_directory=output_path)
         logging.info('Cropping and saving images done.\n')
 
-        radius = 1
-        n_points = 8
-        uniform = True
+        radius = 3
+        n_points = 24
+        uniform = False
 
         # Test scikit LBP on ground truths
         logging.info(
