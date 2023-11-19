@@ -74,6 +74,7 @@ class LocalBinaryPattern(object):
         best_accuracy = 0
         best_parameters = (0, 0, 0)
 
+        # accuracy: 0.06793802145411204 with parameters: (3, 24, False)
         for radius in [1, 2, 3]:
             # for radius in [1]:
             for neighbor_points in range(8, 25, 8):
