@@ -1,0 +1,20 @@
+<h1>Ear Detection Assignment</h1>
+  
+In the first assignment you merely used an existing detector. Here you will be training YOLOv8 for ear prediction. All the code this time is set up for you, you just need to optimize hyperparameters (and the augmentation parameters). Clone needed files and ear datasets <a href="https://drive.google.com/drive/folders/1OI40PqfIYQJdDdDmp0UJcvW909XJCSCn?usp=sharing">from here</a> into your GDrive. Copy the main Notebook for Colab <a href="https://colab.research.google.com/drive/1GkTnh7SQFMpGavxYdOQ24FN4q4k7HVTK?usp=sharing">from here</a> into your own Colab project.
+
+<h2>Prerequisites:</h2>
+<ol>
+  <li>Start a Google Colab project using the IBB code from above. If you have a CUDA-compatible GPU, you are welcome to use your own machine.</li>
+  <li>In Google Colab, select <code>Runtime &gt; Change runtime type &gt; T4 GPU</code>.</li>
+  <li>Import YOLOv8 files into the project from your Google Drive by executing the first code cell (modify paths as needed).</li>
+  <li>Install project dependencies by running the second code cell.</li>
+  <li>Attempt to train the model to verify that the code functions and data is being read. Do not expect best convergence at this stage as hyperparameters are left at default and the model lacks sufficient training data. Additionally, the first execution of <code>train.py</code> may take an extended period due to Colab scanning all images.</li>
+  <li>All the outputs of the training and testing will be available in runs/detect/.</li>
+</ol>
+<h2>Tasks to Complete (Quantitative and Qualitative Evaluation):</h2>
+<ol>
+  <li>In <code>train.py</code>, fine-tune hyperparameters (different optimizer, learning rates, dropout levels, etc.), explanations and list of all the possible parameters at: https://docs.ultralytics.com/usage/cfg/#train. Additionally the <span style="font-family:monospace;">yolov8m</span> is selected in the script, feel free to try others. Store the best performing model from this stage.</li>
+   <li>In <code>train.py</code>, configure data augmentation to suit the dataset, while using the best hyperparameters you have found so far. This step is important for effective model training. To do this, set the train parameter <span style="font-family:monospace;">augment</span> to <span style="font-family:monospace;">True</span>, and adjust the following train parameters: <span style="font-family:monospace;">hsv_h, hsv_s, hsv_v, degrees, translate, scale, shear, perspective, flipud, fliplr, mosaic, mixup, copy_paste</span>. Store the best performing model from this stage.</li>
+  <li>Aim to achieve the highest possible mAP (mean Average Precision), by observing mAP50-95. Monitor the mAP50-95 on the validation set, which is already output by the code. In the en run <code>evaluate.py</code> on the best two models from points 1 and 2 and report mAP50-95 on the test set.</li>
+  <li>Select 5 images where the detector performs poorly and analyze the potential reasons for this underperformance. Sorting and identifying the least effective (or the most interesting) detections is part of your task. Use <code>predict.py</code> to visualize predictions of these images.</li>
+</ol>

@@ -1,0 +1,5 @@
+path: ./ears  # dataset root dir, either absolute, or relative path (to the relative is added to what is stored in ~/.config/Ultralytics/settings.yaml)
+train: images/train/  # train images (relative to 'path')
+val: images/test/  # This is test!
+nc: 2  # number of classes
+names: ['ear',  'other']  # class names
