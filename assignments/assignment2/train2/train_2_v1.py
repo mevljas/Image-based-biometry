@@ -19,7 +19,8 @@ os.chdir(dname)
 # Load the model, feel free to try other models
 model = YOLO("yolov8n.pt")
 
-hsv_hs = [0,  0.01, 0.05] # Small changes in hue
+# All values
+""" hsv_hs = [0,  0.01, 0.02, 0.03, 0.05] # Small changes in hue
 hsv_ss = [0.2, 0.3, 0.5] # Moderate to high changes in saturation
 hsv_vs = [0.2, 0.3, 0.5] # Moderate to high changes in value
 degreess = [5, 10, 15] #5, 10, 15 degrees rotation
@@ -27,6 +28,24 @@ translations = [0.1, 0.2] # 10% to 20% translation
 scales = [0.1, 0.2, 0.3] # 10%, 20%, 30% scaling
 shears = [0, 10] #Up to 10 degrees shearing
 perspectivess = [0, 0.001] # Small perspective warping
+flipuds = [0] # No vertical flipping
+fliplrs = [0.5] # 50% chance of flipping horizontally
+mosaics = [0.5] # 50% chance of applying mosaic augmentation
+mixups = [0.0] # No mixup augmentation
+copy_pastes = [0.0] # No copy-paste augmentation
+optimizer="AdamW"
+dropout=0
+lr=0.001
+weight_decay=0.0001 """
+
+hsv_hs = [0,  0.01, 0.02, 0.03, 0.05] # Small changes in hue
+hsv_ss = [0.7] # Moderate to high changes in saturation
+hsv_vs = [0.4] # Moderate to high changes in value
+degreess = [0.0] #5, 10, 15 degrees rotation
+translations = [0.1] # 10% to 20% translation
+scales = [0.5] # 10%, 20%, 30% scaling
+shears = [0.0] #Up to 10 degrees shearing
+perspectivess = [0] # Small perspective warping
 flipuds = [0] # No vertical flipping
 fliplrs = [0.5] # 50% chance of flipping horizontally
 mosaics = [0.5] # 50% chance of applying mosaic augmentation
@@ -56,6 +75,7 @@ for hsv_h, hsv_s, hsv_v, degrees, translate, scale, shear, perspective, flipud, 
     results = model.train(
         data="ears.yaml",
         save=True,
+        project="train2",
         name=version,
         epochs=20, 
         optimizer=optimizer, 
