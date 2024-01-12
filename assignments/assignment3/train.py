@@ -13,7 +13,7 @@ print(f"Using device: {device}")
 base_path = os.path.join('datasets', 'ears', 'images-cropped')
 train_dir = os.path.join(base_path, 'train')
 val_dir = os.path.join(base_path, 'val')
-test_dir = os.path.join(base_path, 'val')
+test_dir = os.path.join(base_path, 'test')
 train_loader, val_loader, test_loader, num_classes = create_dataloaders(train_dir, val_dir, test_dir)
 
 # Model
