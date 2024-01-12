@@ -40,7 +40,7 @@ def create_dataloaders(train_dir, val_dir, test_dir, batch_size=16):
 
     # Load the training dataset without transforms
     full_train_dataset = CustomImageDataset(train_dir)
-    # test_dataset = CustomImageDataset(test_dir, transform=transform)
+    test_dataset = CustomImageDataset(test_dir, transform=transform)
 
     # Instead of using the val folder, split the train into train and val (because val has different classes)
     # Split the dataset into training and validation sets
@@ -65,7 +65,7 @@ def create_dataloaders(train_dir, val_dir, test_dir, batch_size=16):
     # Create DataLoaders for training, validation, and test sets
     train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(full_train_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     return train_loader, val_loader, test_loader, num_classes
 
