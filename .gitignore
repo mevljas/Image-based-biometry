@@ -163,3 +163,5 @@ assignments/assignment1/data/
 assignments/assignment1/output/
 assignments/assignment2/datasets/ears/
 assignments/assignment3/best_model.pth
+assignments/assignment3/images/
+assignments/assignment3/labels/
