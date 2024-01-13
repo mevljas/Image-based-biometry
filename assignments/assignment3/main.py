@@ -8,7 +8,6 @@ from recognition.lbp.local_binary_pattern import LocalBinaryPattern
 from recognition.orb.orb import Orb
 from recognition.orb.orb_feature_exctractor import ORBFeatureExtractor
 from recognition.resnet import Resnet
-from utils.normaliser import Normaliser
 from utils.data_loader import FileManager
 import torch
 import torch.nn as nn
@@ -21,13 +20,7 @@ if __name__ == '__main__':
     images_path = 'datasets/ears/images-cropped/test/'
     labels_path = 'datasets/ears/labels/test/'
 
-    filenames, identities, ground_truths = FileManager.prepare_data(labels_path=labels_path)
-
-    logging.info(f'Normalizing ground truths.')
-
-    normalized_ground_truths = Normaliser.normalise(filenames=filenames,
-                                                    ground_truths=ground_truths,
-                                                    images_path=images_path)
+    filenames, identities = FileManager.prepare_data()
 
     radius = 3
     n_points = 24
@@ -43,7 +36,6 @@ if __name__ == '__main__':
         neighbor_points=n_points,
         uniform=uniform)
     logging.info(f'Testing scikit LBP finished with accuracy: {scikit_lbp_accuracy}. \n')
-
 
     # Load the pretrained ResNet50 model
     logging.info(f'Testing ResNet.')

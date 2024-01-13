@@ -35,32 +35,7 @@ class FileManager(object):
         return filenames, identities
 
     @staticmethod
-    def load_ground_truths(filenames: [str], labels_path: str) -> {str}:
-        """
-        Reads the files containing grounds truths and saves them in a dictionary.
-        :param labels_path: a path to the directory which holds labels.
-        :param filenames: a list of files that contain grounds truths.
-        :return: a dictionary of read ground truths.
-        """
-        logging.debug('Loading ground truths.')
-        grounds_truths = dict()
-        for filename in filenames:
-            full_filename = labels_path + filename + '.txt'
-            with (open(full_filename, "r") as file):
-                line = file.readline()
-                _, x, y, width, height = line.split()
-                square = grounds_truths.get(filename, [])
-                square.append((float(x), float(y), float(width), float(height)))
-                grounds_truths[filename] = square
-
-            logging.debug('Loaded ' + str(len(grounds_truths.get(filename, []))) +
-                          ' squares for gt file: ' + filename + '.')
-
-        logging.debug('Loaded ' + str(len(grounds_truths.keys())) + ' ground truth files.')
-        return grounds_truths
-
-    @staticmethod
-    def prepare_data(labels_path: str) -> tuple[dict[[str]], dict[str], {str}]:
+    def prepare_data() -> tuple[dict[[str]], dict[str]]:
         """
         Prepares the data for training and testing.
         :param data_path: path to the directory which holds images.
@@ -68,10 +43,9 @@ class FileManager(object):
         """
         logging.debug('Preparing data.')
         filenames, identities = FileManager.load_identities()
-        ground_truths = FileManager.load_ground_truths(filenames=filenames.keys(), labels_path=labels_path)
         logging.debug('Prepared data.')
 
-        return filenames, identities, ground_truths,
+        return filenames, identities,
 
     @staticmethod
     def split_ground_truths(ground_truths: dict[str, list[tuple[int, int, int, int]]], train_set: [str]) -> \
