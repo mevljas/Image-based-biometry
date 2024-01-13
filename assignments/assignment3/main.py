@@ -2,7 +2,7 @@ import logging
 
 import coloredlogs
 
-from detection.viola_jones import ViolaJones
+from utils.normaliser import Normaliser
 from recognition.local_binary_pattern import LocalBinaryPattern
 from utils.data_loader import FileManager
 
@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     logging.info(f'Normalizing ground truths.')
 
-    normalized_ground_truths = ViolaJones.normalise(filenames=filenames,
+    normalized_ground_truths = Normaliser.normalise(filenames=filenames,
                                                     ground_truths=ground_truths,
                                                     images_path=images_path)
 
@@ -34,6 +34,6 @@ if __name__ == '__main__':
         radius=radius,
         neighbor_points=n_points,
         uniform=uniform)
-    logging.info(f'Testing scikit LBP on ground truth images finished with accuracy: {scikit_lbp_accuracy}. \n')
+    logging.info(f'Testing scikit LBP on ground truth images finished with accuracy: {scikit_lbp_accuracy} %. \n')
 
     logging.info('Program finished')

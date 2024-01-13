@@ -3,7 +3,7 @@ import logging
 import cv2
 
 
-class ViolaJones(object):
+class Normaliser(object):
     @staticmethod
     def get_image_size(img_name: str, images_path: str) -> (int, int):
         """
@@ -27,7 +27,7 @@ class ViolaJones(object):
             for normalized_gt_box in gt_boxes:
                 x, y, x2, y2 = normalized_gt_box
                 normalized_gt_boxes.append(
-                    ViolaJones.normalise_ground_truth(x1=x, y1=y, x2=x2, y2=y2,
+                    Normaliser.normalise_ground_truth(x1=x, y1=y, x2=x2, y2=y2,
                                                       image_width=img_width,
                                                       image_height=img_height))
 
@@ -92,7 +92,7 @@ class ViolaJones(object):
         for image in filenames:
             logging.debug(f'Detecting ears on image: ' + image)
 
-            image_size = ViolaJones.get_image_size(img_name=image, images_path=images_path)
+            image_size = Normaliser.get_image_size(img_name=image, images_path=images_path)
 
             image_sizes[image] = image_size
 
@@ -114,9 +114,9 @@ class ViolaJones(object):
         :return: Normalised ground truths.
         """
 
-        image_sizes = ViolaJones.get_image_sizes(filenames=filenames, images_path=images_path)
+        image_sizes = Normaliser.get_image_sizes(filenames=filenames, images_path=images_path)
 
-        normalized_ground_truths = ViolaJones.normalise_ground_truths(ground_truths=ground_truths,
+        normalized_ground_truths = Normaliser.normalise_ground_truths(ground_truths=ground_truths,
                                                                       image_sizes=image_sizes,
                                                                       filenames=filenames)
 
