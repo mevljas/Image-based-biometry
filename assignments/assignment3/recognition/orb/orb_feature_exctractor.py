@@ -3,8 +3,14 @@ import numpy as np
 
 
 class ORBFeatureExtractor:
-    def __init__(self, n_keypoints=500):
-        self.orb = cv2.ORB_create(n_keypoints)
+    def __init__(self, ):
+        self.orb = cv2.ORB_create(
+            nfeatures=2000,    # Adjust based on the number of keypoints you want
+            scaleFactor=1.2,   # Adjust the scale factor (e.g., 1.2, 1.4)
+            nlevels=8,         # Adjust the number of pyramid levels
+            edgeThreshold=31,  # Adjust the edge threshold
+            firstLevel=0       # Adjust the first pyramid level
+        )
 
     def extract_features(self, image):
         # Convert to grayscale if the image is in color
