@@ -79,7 +79,7 @@ if __name__ == '__main__':
         data_path=images_path,
         filenames=filenames,
         hog_extractor=hog_extractor,
-        model=model
+        resnet_model=model
     )
     logging.info('Finished testing Resnet with HOG features.')
     logging.info(f'Resnet with HOG features accuracy: {hog_accuracy}')

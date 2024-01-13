@@ -114,7 +114,7 @@ class Resnet(object):
 
     @staticmethod
     def test_resnet_hog(data_path: str, filenames: dict,
-                        model, hog_extractor) -> (int, [], []):
+                        resnet_model, hog_extractor) -> (int, [], []):
         """
         Test the resnet with HOG features.
         :param filenames: dictionary of filenames and their identities.
@@ -135,25 +135,36 @@ class Resnet(object):
             logging.debug('Calculating Resnet HOG for: ' + image_path)
 
             # Open and preprocess the image
-            image = Image.open(image_path).convert('RGB')
+            resnet_image  = Image.open(image_path).convert('RGB')
             preprocess = transforms.Compose([
                 transforms.Resize(256),
                 transforms.CenterCrop(224),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ])
-            image = preprocess(image)
-            image = image.unsqueeze(0)
+            resnet_image  = preprocess(resnet_image )
+            resnet_image  = resnet_image .unsqueeze(0)
 
-            # Extract features from the layer preceding the final softmax layer
+            # Extract features from the layer preceding the final softmax layer in ResNet
             with torch.no_grad():
-                features = model(image)
-                image_features.append(np.array(features.squeeze()))
+                resnet_features = resnet_model(resnet_image)
+                image_features.append(np.array(resnet_features.squeeze()))
+
+            # Open and preprocess the image for HOG
+            hog_image = Image.open(image_path).convert('RGB')
+            hog_preprocess = transforms.Compose([
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
+            hog_image = hog_preprocess(hog_image)
+            hog_image = hog_image.unsqueeze(0)
 
             # Ensure image is a valid NumPy array
-            if image is not None and len(image.shape) == 3:
+            if hog_image is not None and len(hog_image.shape) == 3:
                 # Extract HOG features
-                hog_features = hog_extractor.extract_features(np.array(image))
+                hog_features = hog_extractor.extract_features(np.array(hog_image))
                 image_features.append(hog_features)
 
             image_names.append(image_name)
