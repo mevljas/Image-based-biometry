@@ -46,7 +46,7 @@ def extract_lbp_features(dataloader):
             features.append(lbp_features)
         labels.append(lbls.numpy())
 
-    features = np.concatenate(features, axis=0)
+    features = np.vstack(features)
     labels = np.concatenate(labels, axis=0)
     return features, labels
 
@@ -79,15 +79,7 @@ if __name__ == "__main__":
     # Extract LBP features
     lbp_features, _ = extract_lbp_features(test_loader)
 
-    # Reshape lbp_features to have one column per feature
-    lbp_features = lbp_features.reshape(-1, 1)
-
-    # Make the feature arrays have the same number of rows
-    min_rows = min(resnet50_features.shape[0], lbp_features.shape[0])
-    resnet50_features = resnet50_features[:min_rows, :]
-    lbp_features = lbp_features[:min_rows, :]
-
-    # Combine features by adding LBP as additional columns
+    # Combine features (you can use more sophisticated fusion methods)
     combined_features = np.concatenate([resnet50_features, lbp_features], axis=1)
 
     # Dummy recognition predictions (replace this with your recognition method)
