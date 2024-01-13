@@ -1,89 +1,84 @@
 import os
 import torch
 import torchvision.models as models
+from torch import nn
+from torch.utils.checkpoint import checkpoint
 from torchvision import transforms
-from sklearn.metrics import accuracy_score
+from torch.utils.data import DataLoader
+from torchvision.io import read_image
+from PIL import Image
 from skimage import feature
-import cv2
 import numpy as np
-from dataloader import create_dataloaders
 
-# Function to extract features using the provided feature extractor
-def extract_features(feature_extractor, dataloader):
-    feature_extractor.eval()
-    features = []
-    labels = []
+# Check for GPU availability
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
 
-    with torch.no_grad():
-        for inputs, lbls in dataloader:
-            inputs, lbls = inputs.to(device), lbls.to(device)
-            # Feature extraction using the specified feature extractor
-            extracted_features = feature_extractor(inputs).squeeze().cpu().numpy()
-            features.append(extracted_features)
-            labels.append(lbls.cpu().numpy())
+# Load the pretrained ResNet50 model
+model = models.resnet50(pretrained=False)
 
-    features = np.concatenate(features, axis=0)
-    labels = np.concatenate(labels, axis=0)
-    return features, labels
+# Number of classes you want (e.g., 136)
+num_classes = 136
 
-# Function to compute LBP features
-def compute_lbp_features(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    lbp = feature.local_binary_pattern(gray, P=8, R=1, method="uniform")
-    hist, _ = np.histogram(lbp.ravel(), bins=np.arange(0, 60), range=(0, 59))
-    hist = hist.astype("float")
-    hist /= (hist.sum() + 1e-7)  # Normalize
-    return hist
+# Modify the last fully connected layer to match the desired number of classes
+num_ftrs = model.fc.in_features
+model.fc = nn.Linear(num_ftrs, num_classes)
 
-# Function to extract LBP features
-def extract_lbp_features(dataloader):
-    features = []
-    labels = []
+# Load the state dictionary from the saved model
+checkpoint = torch.load('best_model.pth', map_location=torch.device('cpu'))
 
-    for images, lbls in dataloader:
-        for img in images:
-            lbp_features = compute_lbp_features(img.permute(1, 2, 0).numpy())
-            features.append(lbp_features)
-        labels.append(lbls.numpy())
+# Load the state dictionary into the modified model
+model.load_state_dict(checkpoint, strict=False)
 
-    features = np.vstack(features)
-    labels = np.concatenate(labels, axis=0)
-    return features, labels
+# Move the model to the device (CPU or GPU)
+model = model.to(device)
 
-# Function to evaluate recognition performance
-def evaluate_performance(predictions, labels):
-    accuracy = accuracy_score(labels, predictions)
-    print(f"Accuracy: {accuracy * 100:.2f}%")
+model.eval()
 
-if __name__ == "__main__":
-    # Check for GPU availability
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+# Feature extraction function
+def extract_resnet_features(image_path):
+    transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    ])
+    image = Image.open(image_path).convert("RGB")
+    image = transform(image).unsqueeze(0).to(device)
 
-    # Load DataLoaders
-    base_path = os.path.join('datasets', 'ears', 'images-cropped')
-    train_dir = os.path.join(base_path, 'train')
-    val_dir = os.path.join(base_path, 'val')
-    test_dir = os.path.join(base_path, 'test')
-    _, _, test_loader, num_classes = create_dataloaders(train_dir, val_dir, test_dir)
-
-    # Load the pre-trained ResNet50 model
-    model = models.resnet50(pretrained=True)
-    # Remove the classification layer
+    # Extract features from the layer preceding the final softmax layer
     feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
-    feature_extractor = feature_extractor.to(device)
+    with torch.no_grad():
+        features = feature_extractor(image)
 
-    # Extract features
-    resnet50_features, labels = extract_features(feature_extractor, test_loader)
+    return features.squeeze().cpu().numpy()
 
-    # Extract LBP features
-    lbp_features, _ = extract_lbp_features(test_loader)
+# LBP feature extraction function
+def extract_lbp_features(image_path):
+    image = read_image(image_path).float()
+    image = image.mean(dim=0)  # Convert to grayscale
+    lbp = feature.local_binary_pattern(image.numpy(), P=8, R=1, method="uniform")
+    histogram, _ = np.histogram(lbp, bins=np.arange(0, 10), density=True)
+    return histogram
 
-    # Combine features (you can use more sophisticated fusion methods)
-    combined_features = np.concatenate([resnet50_features, lbp_features], axis=1)
 
-    # Dummy recognition predictions (replace this with your recognition method)
-    predictions = np.argmax(combined_features, axis=1)
+# Set paths for the test set
+test_dir = os.path.join('datasets', 'ears', 'images-cropped', 'test')
 
-    # Evaluate recognition performance
-    evaluate_performance(predictions, labels)
+# Extract and store ResNet features
+resnet_features = []
+for filename in os.listdir(test_dir):
+    image_path = os.path.join(test_dir, filename)
+    features = extract_resnet_features(image_path)
+    resnet_features.append(features)
+
+# Store ResNet features (resnet_features) as needed for further recognition tasks
+
+# Extract and store LBP features
+lbp_features = []
+for filename in os.listdir(test_dir):
+    image_path = os.path.join(test_dir, filename)
+    features = extract_lbp_features(image_path)
+    lbp_features.append(features)
+
+# Store LBP features (lbp_features) as needed for further recognition tasks
