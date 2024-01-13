@@ -70,33 +70,33 @@ if __name__ == '__main__':
 
     # Initialize HOG feature extractor
     # Initialize HOG feature extractor with optimized parameters
-    hog_extractor = HOGFeatureExtractor(win_size=(64, 64), block_size=(16, 16), block_stride=(8, 8), cell_size=(4, 4),
-                                        nbins=9)
-
-    # Test HOG on ground truths
-    logging.info(f'Testing Resnet HOG.')
-    hog_accuracy, hog_features, _ = Hog.test(
-        data_path=images_path,
-        filenames=filenames,
-        hog_extractor=hog_extractor,
-    )
-    logging.info('Finished testing Resnet with HOG features.')
-    logging.info(f'Resnet with HOG features accuracy: {hog_accuracy}')
-
-    # # Test ORB on ground truths
-    # logging.info(f'Testing Resnet ORB.')
+    # hog_extractor = HOGFeatureExtractor(win_size=(64, 64), block_size=(16, 16), block_stride=(8, 8), cell_size=(4, 4),
+    #                                     nbins=9)
     #
-    # # Create an instance of ORBFeatureExtractor
-    # orb_extractor = ORBFeatureExtractor()
-    #
-    # # Test Resnet with ORB features
-    # resnet_orb_accuracy, resnet_orb_features, _ = Orb.test(
+    # # Test HOG on ground truths
+    # logging.info(f'Testing HOG.')
+    # hog_accuracy, hog_features, _ = Hog.test(
     #     data_path=images_path,
     #     filenames=filenames,
-    #     orb_extractor=orb_extractor
+    #     hog_extractor=hog_extractor,
     # )
-    #
-    # logging.info('Finished testing Resnet with ORB features.')
-    # logging.info(f'Resnet with ORB features accuracy: {resnet_orb_accuracy}')
+    # logging.info('Finished testing HOG.')
+    # logging.info(f'HOG accuracy: {hog_accuracy}')
+
+    # Test ORB on ground truths
+    logging.info(f'Testing ORB.')
+
+    # Create an instance of ORBFeatureExtractor
+    orb_extractor = ORBFeatureExtractor()
+
+    # Test Resnet with ORB features
+    resnet_orb_accuracy, resnet_orb_features, _ = Orb.test(
+        data_path=images_path,
+        filenames=filenames,
+        orb_extractor=orb_extractor
+    )
+
+    logging.info('Finished testing ORB')
+    logging.info(f'ORB accuracy: {resnet_orb_accuracy}')
 
     logging.info('Program finished')

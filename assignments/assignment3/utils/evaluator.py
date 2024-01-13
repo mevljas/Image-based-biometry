@@ -17,8 +17,16 @@ class Evaluator(object):
 
         for i in range(num_images):
             for j in range(num_images):
-                # Calculate cosine similarity between LBP histograms
-                similarity_matrix[i, j] = cosine_similarity([images[i]], [images[j]])[0, 0]
+                # Calculate cosine similarity between histograms
+                first = images[i]
+                second = images[j]
+                max_length = max(len(first), len(second))
+                first = np.pad(first, (0, max_length - len(first)))
+                second = np.pad(second, (0, max_length - len(second)))
+                if len(first) == 0 or len(second) == 0:
+                    similarity_matrix[i, j] = 0
+                else:
+                    similarity_matrix[i, j] = cosine_similarity([first], [second])[0, 0]
 
         return similarity_matrix
 
