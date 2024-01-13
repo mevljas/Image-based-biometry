@@ -10,8 +10,8 @@ class HOGFeatureExtractor:
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         # Resize the image to meet HOG descriptor requirements
-        if image is not None and (image.shape[0] != 128 or image.shape[1] != 64):
-            image = cv2.resize(image, (64, 128), interpolation=cv2.INTER_AREA)
+        if image is not None and (image.shape[0] != 64 or image.shape[1] != 64):
+            image = cv2.resize(image, (64, 64), interpolation=cv2.INTER_AREA)
 
         # Ensure the image is in the correct data type
         image = cv2.convertScaleAbs(image)
