@@ -1,19 +1,11 @@
 import logging
 
 import coloredlogs
-from torch import nn
 
 from recognition.resnet import Resnet
+from recognition.HOG_feature_extractor import HOGFeatureExtractor
 from utils.normaliser import Normaliser
-from recognition.local_binary_pattern import LocalBinaryPattern
 from utils.data_loader import FileManager
-import torch
-from torchvision import transforms
-from torchvision.models import resnet50
-from PIL import Image
-from skimage import feature
-import numpy as np
-import os
 import torch
 import torch.nn as nn
 import torchvision.models as models
@@ -38,17 +30,17 @@ if __name__ == '__main__':
     n_points = 24
     uniform = False
 
-    # Test scikit LBP on ground truths
-    logging.info(
-        f'Testing scikit LBP on ground truth images with parameters: radius: {radius}, n_points: {n_points}.')
-    scikit_lbp_accuracy, lbp_features, _ = LocalBinaryPattern.test_local_binary_pattern(
-        data_path=images_path,
-        filenames=filenames,
-        radius=radius,
-        neighbor_points=n_points,
-        uniform=uniform)
-    logging.info(f'Testing scikit LBP on ground truth images finished with accuracy: {scikit_lbp_accuracy}. \n')
-
+    # # Test scikit LBP on ground truths
+    # logging.info(
+    #     f'Testing scikit LBP on ground truth images with parameters: radius: {radius}, n_points: {n_points}.')
+    # scikit_lbp_accuracy, lbp_features, _ = LocalBinaryPattern.test_local_binary_pattern(
+    #     data_path=images_path,
+    #     filenames=filenames,
+    #     radius=radius,
+    #     neighbor_points=n_points,
+    #     uniform=uniform)
+    # logging.info(f'Testing scikit LBP on ground truth images finished with accuracy: {scikit_lbp_accuracy}. \n')
+    #
     # Load the pretrained ResNet50 model
     model = models.resnet50(pretrained=False)
 
@@ -67,14 +59,30 @@ if __name__ == '__main__':
 
     # Remove the final softmax layer for feature extraction
     feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
+    #
+    # resnet_accuracy, resnet_features, _ = Resnet.test_resnet(data_path=images_path, filenames=filenames, model=feature_extractor)
+    #
+    # # Convert lists to numpy arrays
+    # # resnet_features_array = np.array(lbp_features)
+    # # lbp_features_array = np.array(resnet_features)
+    #
+    # logging.info(f'Testing Resnet on ground truth images finished with accuracy: {resnet_accuracy}. \n')
 
-    resnet_accuracy, resnet_features, _ = Resnet.test_resnet(data_path=images_path, filenames=filenames, model=feature_extractor)
+    # Initialize HOG feature extractor
+    # Initialize HOG feature extractor with optimized parameters
+    hog_extractor = HOGFeatureExtractor(win_size=(64, 128), block_size=(16, 16), block_stride=(8, 8), cell_size=(8, 8),
+                                        nbins=9)
 
-    # Convert lists to numpy arrays
-    # resnet_features_array = np.array(lbp_features)
-    # lbp_features_array = np.array(resnet_features)
-
-    logging.info(f'Testing Resnet on ground truth images finished with accuracy: {resnet_accuracy}. \n')
+    # Test HOG on ground truths
+    logging.info(f'Testing Resnet HOG.')
+    hog_accuracy, hog_features, _ = Resnet.test_resnet_hog(
+        data_path=images_path,
+        filenames=filenames,
+        hog_extractor=hog_extractor,
+        model=model
+    )
+    logging.info('Finished testing Resnet with HOG features.')
+    logging.info(f'Resnet with HOG features accuracy: {hog_accuracy}')
 
 
     logging.info('Program finished')
