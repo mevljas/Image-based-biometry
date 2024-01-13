@@ -9,19 +9,19 @@ from torchvision import transforms
 from utils.evaluator import Evaluator
 
 
-class Resnet(object):
+class Orb(object):
 
     @staticmethod
     def test(data_path: str, filenames: dict,
-             model) -> (int, [], []):
+                        model, orb_extractor) -> (int, [], []):
         """
-        Test the resnet.
+        Test the resnet with ORB features.
         :param filenames: dictionary of filenames and their identities.
         :param data_path: base path for cascade files.
         :return:
         """
 
-        logging.debug(f'Testing Resnet .')
+        logging.debug(f'Testing Resnet ORB.')
 
         # Find all files in the given directory
         files = [(os.path.join(dirpath, f), f.split('.')[0], f) for (dirpath, dirnames, files) in os.walk(data_path) for
@@ -31,7 +31,7 @@ class Resnet(object):
         image_features = []
         image_names = []
         for image_path, image_name, _ in files:
-            logging.debug('Calculating Resnet for: ' + image_path)
+            logging.debug('Calculating Resnet ORB for: ' + image_path)
 
             # Open and preprocess the image
             image = Image.open(image_path).convert('RGB')
@@ -49,6 +49,12 @@ class Resnet(object):
                 features = model(image)
                 image_features.append(np.array(features.squeeze()))
 
+            # Ensure image is a valid NumPy array
+            if image is not None:
+                # Extract ORB features
+                orb_features = orb_extractor.extract_features(np.array(image))
+                image_features.append(orb_features)
+
             image_names.append(image_name)
 
         # Calculate the similarity matrix
@@ -58,9 +64,9 @@ class Resnet(object):
         most_similar_image = Evaluator.find_most_similar_image(similarity_matrix)
 
         accuracy = Evaluator.calculate_accuracy(image_names=image_names,
-                                                most_similar_image=most_similar_image,
-                                                filenames=filenames)
+                                             most_similar_image=most_similar_image,
+                                             filenames=filenames)
 
-        logging.debug('Finished testing Resnet.')
-        logging.debug('Resnet accuracy: ' + str(accuracy))
+        logging.debug('Finished testing Resnet with ORB features.')
+        logging.debug('Resnet with ORB features accuracy: ' + str(accuracy))
         return accuracy, image_features, files

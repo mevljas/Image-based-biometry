@@ -9,19 +9,18 @@ from torchvision import transforms
 from utils.evaluator import Evaluator
 
 
-class Resnet(object):
+class Hog(object):
 
     @staticmethod
-    def test(data_path: str, filenames: dict,
-             model) -> (int, [], []):
+    def test(data_path: str, filenames: dict, hog_extractor) -> (int, [], []):
         """
-        Test the resnet.
+        Test the resnet with HOG features.
         :param filenames: dictionary of filenames and their identities.
         :param data_path: base path for cascade files.
         :return:
         """
 
-        logging.debug(f'Testing Resnet .')
+        logging.debug(f'Testing Resnet HOG.')
 
         # Find all files in the given directory
         files = [(os.path.join(dirpath, f), f.split('.')[0], f) for (dirpath, dirnames, files) in os.walk(data_path) for
@@ -31,24 +30,15 @@ class Resnet(object):
         image_features = []
         image_names = []
         for image_path, image_name, _ in files:
-            logging.debug('Calculating Resnet for: ' + image_path)
+            logging.debug('Calculating HOG for: ' + image_path)
 
             # Open and preprocess the image
-            image = Image.open(image_path).convert('RGB')
-            preprocess = transforms.Compose([
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ])
-            image = preprocess(image)
-            image = image.unsqueeze(0)
+            image = np.array(Image.open(image_path).convert('RGB'))
 
-            # Extract features from the layer preceding the final softmax layer
-            with torch.no_grad():
-                features = model(image)
-                image_features.append(np.array(features.squeeze()))
+            # Extract HOG features
+            hog_features = hog_extractor.extract_features(image)
 
+            image_features.append(hog_features)
             image_names.append(image_name)
 
         # Calculate the similarity matrix
@@ -61,6 +51,6 @@ class Resnet(object):
                                                 most_similar_image=most_similar_image,
                                                 filenames=filenames)
 
-        logging.debug('Finished testing Resnet.')
-        logging.debug('Resnet accuracy: ' + str(accuracy))
+        logging.debug('Finished testing Resnet with HOG features.')
+        logging.debug('Resnet with HOG features accuracy: ' + str(accuracy))
         return accuracy, image_features, files
