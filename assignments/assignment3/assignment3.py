@@ -1,78 +1,84 @@
 import os
 import torch
 import torchvision.models as models
-import torch.optim as optim
-import torch.nn as nn
-from dataloader import create_dataloaders
+from torch import nn
+from torch.utils.checkpoint import checkpoint
+from torchvision import transforms
+from torch.utils.data import DataLoader
+from torchvision.io import read_image
+from PIL import Image
+from skimage import feature
+import numpy as np
+
 # Check for GPU availability
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
+# Load the pretrained ResNet50 model
+model = models.resnet50(pretrained=False)
 
-# Load DataLoaders
-base_path = os.path.join('datasets', 'ears', 'images-cropped')
-train_dir = os.path.join(base_path, 'train')
-val_dir = os.path.join(base_path, 'val')
-test_dir = os.path.join(base_path, 'test')
-train_loader, val_loader, test_loader, num_classes = create_dataloaders(train_dir, val_dir, test_dir)
+# Number of classes you want (e.g., 136)
+num_classes = 136
 
-# Model
-model = models.resnet50(pretrained=True)
+# Modify the last fully connected layer to match the desired number of classes
 num_ftrs = model.fc.in_features
 model.fc = nn.Linear(num_ftrs, num_classes)
 
-# Move the model to the device (GPU or CPU)
+# Load the state dictionary from the saved model
+checkpoint = torch.load('best_model.pth', map_location=torch.device('cpu'))
+
+# Load the state dictionary into the modified model
+model.load_state_dict(checkpoint, strict=False)
+
+# Move the model to the device (CPU or GPU)
 model = model.to(device)
 
-# Loss and optimizer
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.001, betas=(0.8, 0.999), eps=1e-08)
-# optimizer = optim.Adam(model.parameters())
+model.eval()
 
-# Learning rate scheduler
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, verbose=True)
+# Feature extraction function
+def extract_resnet_features(image_path):
+    transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    ])
+    image = Image.open(image_path).convert("RGB")
+    image = transform(image).unsqueeze(0).to(device)
 
-# Training
-best_val_accuracy = 0.0
-val_loss = 0
-model.train()
-for epoch in range(100):  # number of epochs
-    # Training loop
-    for inputs, labels in train_loader:
-        inputs, labels = inputs.to(device), labels.to(device)
-
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
-
-    scheduler.step(val_loss)
-    
-    # Validation loop
-    model.eval()
-    val_loss = 0
-    correct = 0
-    total = 0
+    # Extract features from the layer preceding the final softmax layer
+    feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
     with torch.no_grad():
-        for inputs, labels in val_loader:
-            # Inside the training loop
-            inputs, labels = inputs.to(device), labels.to(device)
+        features = feature_extractor(image)
 
-            outputs = model(inputs)
-            val_loss += criterion(outputs, labels).item()
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+    return features.squeeze().cpu().numpy()
 
-    val_loss /= len(val_loader)
-    val_accuracy = 100 * correct / total
-    print(f'Epoch {epoch+1}, Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_accuracy:.2f}%. ', end="")
+# LBP feature extraction function
+def extract_lbp_features(image_path):
+    image = read_image(image_path).float()
+    image = image.mean(dim=0)  # Convert to grayscale
+    lbp = feature.local_binary_pattern(image.numpy(), P=8, R=1, method="uniform")
+    histogram, _ = np.histogram(lbp, bins=np.arange(0, 10), density=True)
+    return histogram
 
-    if val_accuracy > best_val_accuracy:
-        best_val_accuracy = val_accuracy
-        # Save the model
-        torch.save(model.state_dict(), 'best_model.pth')
-        print(f"New best model saved.")
-    else:
-        print("")
+
+# Set paths for the test set
+test_dir = os.path.join('datasets', 'ears', 'images-cropped', 'test')
+
+# Extract and store ResNet features
+resnet_features = []
+for filename in os.listdir(test_dir):
+    image_path = os.path.join(test_dir, filename)
+    features = extract_resnet_features(image_path)
+    resnet_features.append(features)
+
+# Store ResNet features (resnet_features) as needed for further recognition tasks
+
+# Extract and store LBP features
+lbp_features = []
+for filename in os.listdir(test_dir):
+    image_path = os.path.join(test_dir, filename)
+    features = extract_lbp_features(image_path)
+    lbp_features.append(features)
+
+# Store LBP features (lbp_features) as needed for further recognition tasks
