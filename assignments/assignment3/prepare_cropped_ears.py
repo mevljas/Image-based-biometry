@@ -17,6 +17,7 @@ def parse_yolo_annotation(annotation_path):
         boxes.append((x_center, y_center, width, height))
     return boxes
 
+
 def convert_to_pixel_coordinates(box, img_width, img_height):
     x_center, y_center, width, height = box
     x = int((x_center - width / 2) * img_width)
@@ -24,6 +25,7 @@ def convert_to_pixel_coordinates(box, img_width, img_height):
     w = int(width * img_width)
     h = int(height * img_height)
     return x, y, w, h
+
 
 def cut_and_save_image(image_path, annotation_path, save_path, id, img_name):
     image = Image.open(image_path)
@@ -33,7 +35,8 @@ def cut_and_save_image(image_path, annotation_path, save_path, id, img_name):
     for i, box in enumerate(boxes):
         x, y, w, h = convert_to_pixel_coordinates(box, img_width, img_height)
         cut_image = image.crop((x, y, x+w, y+h))
-        cut_image.save(os.path.join(save_path, f'{id}-{img_name}-{i}.png'))
+        cut_image.save(os.path.join(save_path, f'{img_name}.png'))
+
 
 def process_images(base_path, categories, out_dir):
     global translation_map
@@ -54,7 +57,7 @@ def process_images(base_path, categories, out_dir):
             id_list.append(os.path.basename(ii).split('-')[0])
         uniq_ids = set(id_list)
         translation_map = {value: index for index, value in enumerate(uniq_ids)}
-        num_classes = len(uniq_ids) # Get the number of unique classes
+        num_classes = len(uniq_ids)  # Get the number of unique classes
 
         for i, filename in enumerate(image_files):
             if os.path.splitext(os.path.basename(filename))[0] in err_list:
@@ -62,7 +65,7 @@ def process_images(base_path, categories, out_dir):
             image_path = os.path.join(img_dir, filename)
             annotation_path = os.path.join(label_dir, os.path.splitext(filename)[0] + '.txt')
             img_split_name = os.path.splitext(os.path.basename(image_path))[0].split('-')
-            
+
             if category == 'test':
                 id = int(test_ids[img_split_name[0]])
                 img_name = img_split_name[0]
@@ -71,9 +74,9 @@ def process_images(base_path, categories, out_dir):
                 img_name = img_split_name[1]
 
             if category == 'val':
-                id += 1000 # Add 1000 to avoid overlap with train
+                id += 1000  # Add 1000 to avoid overlap with train
             elif category == 'test':
-                id += 2000 # Add 2000 to avoid overlap with train and val
+                id += 2000  # Add 2000 to avoid overlap with train and val
 
             cut_and_save_image(image_path, annotation_path, save_dir, id, img_name)
 
@@ -81,8 +84,9 @@ def process_images(base_path, categories, out_dir):
             if progress != progress_prev:
                 print(f"Processed {progress:d}% of {category} images.", end='\r', flush=True)
             progress_prev = progress
-        print(" " * 50, end='\r')           
+        print(" " * 50, end='\r')
         print(f"Processed all {category} images.")
+
 
 base_path = os.path.join('datasets', 'ears')  # Replace with your base directory
 out_dir = os.path.join(base_path, 'images-cropped')

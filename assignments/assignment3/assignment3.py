@@ -9,6 +9,7 @@ from torchvision.io import read_image
 from PIL import Image
 from skimage import feature
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Check for GPU availability
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -34,6 +35,49 @@ model.load_state_dict(checkpoint, strict=False)
 model = model.to(device)
 
 model.eval()
+
+
+def find_most_similar_image(similarity_matrix):
+    num_images = similarity_matrix.shape[0]
+    most_similar_image = np.zeros(num_images, dtype=int)
+
+    for i in range(num_images):
+        # Exclude the image itself from the comparison
+        sim_values = np.delete(similarity_matrix[i, :], i)
+        most_similar_image[i] = np.argmax(sim_values)
+
+    return most_similar_image
+
+def calculate_accuracy(image_names: list, most_similar_image, filenames: dict):
+    correct_recognitions = 0
+    all_recognitions = 0
+    for i, similar_image_index in enumerate(most_similar_image):
+        query = image_names[i]
+        match = image_names[similar_image_index]
+        print(f"{query} is most similar to {match}")
+        all_recognitions += 1
+        if filenames[query] == filenames[match]:
+            correct_recognitions += 1
+
+    if correct_recognitions == 0:
+        accuracy = 0
+    else:
+        accuracy = correct_recognitions / all_recognitions
+    return accuracy
+
+
+def calculate_similarity_matrix(images: list):
+    num_images = len(images)
+    similarity_matrix = np.zeros((num_images, num_images))
+
+    for i in range(num_images):
+        for j in range(num_images):
+            # Calculate cosine similarity between LBP histograms
+            similarity_matrix[i, j] = cosine_similarity([images[i]], [images[j]])[0, 0]
+
+    return similarity_matrix
+
+
 
 # Feature extraction function
 def extract_resnet_features(image_path):
@@ -82,3 +126,16 @@ for filename in os.listdir(test_dir):
     lbp_features.append(features)
 
 # Store LBP features (lbp_features) as needed for further recognition tasks
+
+# Calculate the similarity matrix
+similarity_matrix = calculate_similarity_matrix(lbp_features)
+
+# Find the most similar image
+most_similar_image = find_most_similar_image(similarity_matrix)
+
+accuracy = calculate_accuracy(image_names=image_names,
+                                                 most_similar_image=most_similar_image,
+                                                 filenames=filenames)
+
+logging.debug('Finished testing LBP.')
+logging.debug('LBP accuracy: ' + str(accuracy))
