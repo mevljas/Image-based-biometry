@@ -12,8 +12,8 @@ class ORBFeatureExtractor:
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         # Resize the image if needed
-        if image is not None and (image.shape[0] != 128 or image.shape[1] != 64):
-            image = cv2.resize(image, (64, 128), interpolation=cv2.INTER_AREA)
+        if image is not None and (image.shape[0] != 64 or image.shape[1] != 64):
+            image = cv2.resize(image, (64, 64), interpolation=cv2.INTER_AREA)
 
         # Compute ORB features
         keypoints, descriptors = self.orb.detectAndCompute(image, None)
