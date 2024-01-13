@@ -29,59 +29,60 @@ if __name__ == '__main__':
                                                     ground_truths=ground_truths,
                                                     images_path=images_path)
 
-    # radius = 3
-    # n_points = 24
-    # uniform = False
-    #
-    # # Test scikit LBP on ground truths
-    # logging.info(
-    #     f'Testing scikit LBP on ground truth images with parameters: radius: {radius}, n_points: {n_points}.')
-    # scikit_lbp_accuracy, lbp_features, _ = LocalBinaryPattern.test(
-    #     data_path=images_path,
-    #     filenames=filenames,
-    #     radius=radius,
-    #     neighbor_points=n_points,
-    #     uniform=uniform)
-    # logging.info(f'Testing scikit LBP on ground truth images finished with accuracy: {scikit_lbp_accuracy}. \n')
+    radius = 3
+    n_points = 24
+    uniform = True
 
-    # # Load the pretrained ResNet50 model
-    # model = models.resnet50(pretrained=False)
-    #
-    # # Number of classes you want (e.g., 136)
-    # num_classes = 136
-    #
-    # # Modify the last fully connected layer to match the desired number of classes
-    # num_ftrs = model.fc.in_features
-    # model.fc = nn.Linear(num_ftrs, num_classes)
-    #
-    # # Load the state dictionary from the saved model
-    # checkpoint = torch.load('best_model.pth', map_location=torch.device('cpu'))
-    #
-    # # Load the state dictionary into the modified model
-    # model.load_state_dict(checkpoint, strict=False)
-    #
-    # # Remove the final softmax layer for feature extraction
-    # feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
-    #
-    # resnet_accuracy, resnet_features, _ = Resnet.test(data_path=images_path, filenames=filenames,
-    #                                                   model=feature_extractor)
-    #
-    # logging.info(f'Testing Resnet on ground truth images finished with accuracy: {resnet_accuracy}. \n')
+    # Test scikit LBP on ground truths
+    logging.info(
+        f'Testing scikit LBP with parameters: radius: {radius}, n_points: {n_points}, uniform: {uniform}.')
+    scikit_lbp_accuracy, lbp_features, _ = LocalBinaryPattern.test(
+        data_path=images_path,
+        filenames=filenames,
+        radius=radius,
+        neighbor_points=n_points,
+        uniform=uniform)
+    logging.info(f'Testing scikit LBP finished with accuracy: {scikit_lbp_accuracy}. \n')
+
+
+    # Load the pretrained ResNet50 model
+    logging.info(f'Testing ResNet.')
+    model = models.resnet50(pretrained=False)
+
+    # Number of classes you want (e.g., 136)
+    num_classes = 136
+
+    # Modify the last fully connected layer to match the desired number of classes
+    num_ftrs = model.fc.in_features
+    model.fc = nn.Linear(num_ftrs, num_classes)
+
+    # Load the state dictionary from the saved model
+    checkpoint = torch.load('best_model.pth', map_location=torch.device('cpu'))
+
+    # Load the state dictionary into the modified model
+    model.load_state_dict(checkpoint, strict=False)
+
+    # Remove the final softmax layer for feature extraction
+    feature_extractor = torch.nn.Sequential(*list(model.children())[:-1])
+
+    resnet_accuracy, resnet_features, _ = Resnet.test(data_path=images_path, filenames=filenames,
+                                                      model=feature_extractor)
+
+    logging.info(f'Testing Resnet finished with accuracy: {resnet_accuracy}. \n')
 
     # Initialize HOG feature extractor
     # Initialize HOG feature extractor with optimized parameters
-    # hog_extractor = HOGFeatureExtractor(win_size=(64, 64), block_size=(16, 16), block_stride=(8, 8), cell_size=(4, 4),
-    #                                     nbins=9)
-    #
-    # # Test HOG on ground truths
-    # logging.info(f'Testing HOG.')
-    # hog_accuracy, hog_features, _ = Hog.test(
-    #     data_path=images_path,
-    #     filenames=filenames,
-    #     hog_extractor=hog_extractor,
-    # )
-    # logging.info('Finished testing HOG.')
-    # logging.info(f'HOG accuracy: {hog_accuracy}')
+    hog_extractor = HOGFeatureExtractor(win_size=(64, 64), block_size=(16, 16), block_stride=(8, 8), cell_size=(4, 4),
+                                        nbins=9)
+
+    # Test HOG on ground truths
+    logging.info(f'Testing HOG.')
+    hog_accuracy, hog_features, _ = Hog.test(
+        data_path=images_path,
+        filenames=filenames,
+        hog_extractor=hog_extractor,
+    )
+    logging.info('Finished testing HOG with accuracy: {hog_accuracy}')
 
     # Test ORB on ground truths
     logging.info(f'Testing ORB.')
@@ -96,7 +97,6 @@ if __name__ == '__main__':
         orb_extractor=orb_extractor
     )
 
-    logging.info('Finished testing ORB')
-    logging.info(f'ORB accuracy: {resnet_orb_accuracy}')
+    logging.info('Finished testing ORB with accuracy: {resnet_orb_accuracy}')
 
     logging.info('Program finished')

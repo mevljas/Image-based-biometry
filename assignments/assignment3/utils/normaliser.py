@@ -17,7 +17,7 @@ class Normaliser(object):
         return img.shape[1], img.shape[0]
 
     @staticmethod
-    def normalise_ground_truths(ground_truths: dict, image_sizes: dict, filenames: [str]):
+    def normalise_images(ground_truths: dict, image_sizes: dict, filenames: [str]):
         normalized_ground_truths = dict()
         for filename in filenames:
             gt_boxes = ground_truths[filename]
@@ -116,8 +116,8 @@ class Normaliser(object):
 
         image_sizes = Normaliser.get_image_sizes(filenames=filenames, images_path=images_path)
 
-        normalized_ground_truths = Normaliser.normalise_ground_truths(ground_truths=ground_truths,
-                                                                      image_sizes=image_sizes,
-                                                                      filenames=filenames)
+        normalized_ground_truths = Normaliser.normalise_images(ground_truths=ground_truths,
+                                                               image_sizes=image_sizes,
+                                                               filenames=filenames)
 
         return normalized_ground_truths
