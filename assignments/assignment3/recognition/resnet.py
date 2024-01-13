@@ -5,10 +5,16 @@ import cv2
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-from recognition.scikit_local_binary_pattern import ScikitLocalBinaryPattern
+import torch
+from torchvision import transforms
+from torchvision.models import resnet50
+from PIL import Image
+from skimage import feature
+import numpy as np
+import os
 
 
-class LocalBinaryPattern(object):
+class Resnet(object):
 
     @staticmethod
     def calculate_similarity_matrix(images: list):
@@ -53,16 +59,16 @@ class LocalBinaryPattern(object):
         return accuracy
 
     @staticmethod
-    def test_local_binary_pattern(data_path: str, filenames: dict,
-                                  radius: int, neighbor_points: int, uniform: bool) -> (int, [], []):
+    def test_resnet(data_path: str, filenames: dict,
+                    model) -> (int, [], []):
         """
-        Test the local binary pattern model with the provided parameters.
+        Test the resnet.
         :param filenames: dictionary of filenames and their identities.
         :param data_path: base path for cascade files.
         :return:
         """
 
-        logging.debug(f'Testing LBP with scikit.')
+        logging.debug(f'Testing Resnet .')
 
         # Find all files in the given directory
         files = [(os.path.join(dirpath, f), f.split('.')[0], f) for (dirpath, dirnames, files) in os.walk(data_path) for
@@ -72,29 +78,36 @@ class LocalBinaryPattern(object):
         image_features = []
         image_names = []
         for image_path, image_name, _ in files:
-            logging.debug('Calculating LBP for: ' + image_path +
-                          ' with parameters: radius: ' + str(radius) +
-                          ', neighbor points: ' + str(neighbor_points) +
-                          ', uniform: ' + str(uniform) + '.')
+            logging.debug('Calculating Resnet for: ' + image_path)
 
-            # Read and resize images to a consistent size
-            img = cv2.resize(cv2.imread(image_path, cv2.IMREAD_GRAYSCALE), (128, 128))
+            # Open and preprocess the image
+            image = Image.open(image_path).convert('RGB')
+            preprocess = transforms.Compose([
+                transforms.Resize(256),
+                transforms.CenterCrop(224),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ])
+            image = preprocess(image)
+            image = image.unsqueeze(0)
 
-            image_features.append(
-                ScikitLocalBinaryPattern.run(img, neighbor_points, radius, uniform))
+            # Extract features from the layer preceding the final softmax layer
+            with torch.no_grad():
+                features = model(image)
+                image_features.append(np.array(features.squeeze()))
 
             image_names.append(image_name)
 
         # Calculate the similarity matrix
-        similarity_matrix = LocalBinaryPattern.calculate_similarity_matrix(image_features)
+        similarity_matrix = Resnet.calculate_similarity_matrix(image_features)
 
         # Find the most similar image
-        most_similar_image = LocalBinaryPattern.find_most_similar_image(similarity_matrix)
+        most_similar_image = Resnet.find_most_similar_image(similarity_matrix)
 
-        accuracy = LocalBinaryPattern.calculate_accuracy(image_names=image_names,
-                                                         most_similar_image=most_similar_image,
-                                                         filenames=filenames)
+        accuracy = Resnet.calculate_accuracy(image_names=image_names,
+                                             most_similar_image=most_similar_image,
+                                             filenames=filenames)
 
         logging.debug('Finished testing LBP.')
-        logging.debug('LBP accuracy: ' + str(accuracy))
+        logging.debug('LBP accuracy: ' + str(accuracy) + ' %.')
         return accuracy, image_features, files
