@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     # Initialize HOG feature extractor
     # Initialize HOG feature extractor with optimized parameters
-    hog_extractor = HOGFeatureExtractor(win_size=(256, 256), block_size=(16, 16), block_stride=(8, 8), cell_size=(8, 8),
+    hog_extractor = HOGFeatureExtractor(win_size=(64, 128), block_size=(16, 16), block_stride=(8, 8), cell_size=(8, 8),
                                         nbins=9)
 
     # Test HOG on ground truths
