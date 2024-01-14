@@ -74,7 +74,7 @@ if __name__ == '__main__':
         filenames=filenames,
         hog_extractor=hog_extractor,
     )
-    logging.info('Finished testing HOG with accuracy: {hog_accuracy}')
+    logging.info(f'Finished testing HOG with accuracy: {hog_accuracy}')
 
     # Test ORB on ground truths
     logging.info(f'Testing ORB.')
@@ -89,6 +89,6 @@ if __name__ == '__main__':
         orb_extractor=orb_extractor
     )
 
-    logging.info('Finished testing ORB with accuracy: {resnet_orb_accuracy}')
+    logging.info(f'Finished testing ORB with accuracy: {resnet_orb_accuracy}')
 
     logging.info('Program finished')
