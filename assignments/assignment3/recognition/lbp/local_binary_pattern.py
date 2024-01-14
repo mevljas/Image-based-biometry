@@ -3,8 +3,9 @@ import os
 
 import cv2
 
-from recognition.lbp.scikit_local_binary_pattern import ScikitLocalBinaryPattern
 from utils.evaluator import Evaluator
+
+from skimage import feature
 
 
 class LocalBinaryPattern(object):
@@ -37,8 +38,12 @@ class LocalBinaryPattern(object):
             # Read and resize images to a consistent size
             img = cv2.resize(cv2.imread(image_path, cv2.IMREAD_GRAYSCALE), (128, 128))
 
-            image_features.append(
-                ScikitLocalBinaryPattern.run(img, neighbor_points, radius, uniform))
+            features = feature.local_binary_pattern(img, P=neighbor_points, R=radius,
+                                                    method='uniform' if uniform else 'default')
+            # Correctly handle 3D and 2D features
+            features = features.flatten() if features.ndim == 2 else features
+
+            image_features.append(features)
 
             image_names.append(image_name)
 
@@ -49,8 +54,8 @@ class LocalBinaryPattern(object):
         most_similar_image = Evaluator.find_most_similar_image(similarity_matrix)
 
         accuracy = Evaluator.calculate_accuracy(image_names=image_names,
-                                                         most_similar_image=most_similar_image,
-                                                         filenames=filenames)
+                                                most_similar_image=most_similar_image,
+                                                filenames=filenames)
 
         logging.debug('Finished testing LBP.')
         logging.debug('LBP accuracy: ' + str(accuracy))

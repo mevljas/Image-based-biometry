@@ -1,11 +1,6 @@
 import logging
-import os
-
-import cv2
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-
-from recognition.lbp.scikit_local_binary_pattern import ScikitLocalBinaryPattern
 
 
 class Evaluator(object):
